@@ -3,14 +3,14 @@
 var cv = {
     canvas : document.createElement("canvas"),
     start : function() {
-        this.canvas.height = 800;  
-        this.canvas.width = 600;
+        this.canvas.height = 2000;  
+        this.canvas.width = 2000;
         this.ctx = this.canvas.getContext("2d");   
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-        this.interval = setInterval(gameloop, 100);
-        this.box = [0, 0, 500, 500]
+        this.interval = setInterval(gameloop, 20);
+        this.box = [0, 0, 2000, 2000]   
         //this is good since it lines up pixels with lines
-        this.ctx.translate(0.5, 0.5)
+        //this.ctx.translate(0.5, 0.5)
     },
     clear : function() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -20,57 +20,87 @@ var cv = {
 }
 
 
+startcoords = [0, 0]
+c = cv.ctx
+wid = 20
+hig = 20
+spacing = 1
+size = 10
 
 cv.start()  
 
 keysPressed = []
 
-points = [[0, 0, 0, 10, 10, 10, 10, 0, 0, 0], [20, 40, 20, 60, 40, 60, 40, 40, 20, 40]]
+c = cv.ctx
 
+let screen = [];
 
+var TilesWid = 150;
+var TilesHig = 150;
+w = TilesWid
+h = TilesHig
+tiles = [w*80+40, w*80+41, w*80+42, w*81+42, w*79+41]
 
-
-//heeeey maybe it's time for a 3d renderer here
-
-function generatePoints(l1, l2) {
-    for (var i = 0; i<l1; i++) {
-        p1 = []
-        for (var j = 0; j<l2; j++) {
-        //this generates competely random, but connected points:
-        /*x1 =Math.random()*cv.box[2]
-        y1 =Math.random()*cv.box[3]
-        p1.push(Math.random()*cv.box[2], Math.random()*cv.box[3], x1, y1)
-        p1.push(x1, y1, Math.random()*cv.box[2], Math.random()*cv.box[3])*/
-
-        //this generates something cool maybe:
-        p1.push(i/l1*cv.box[2], j/l2*cv.box[3], j/l1*cv.box[2], i/l2*cv.box[3])
-
-        
+function displayscreen(update) {
+    remove = []
+    add = []
+    for (i=0; i<TilesWid; i++) {
+        for (j=0; j<TilesHig; j++) {
+            pos = i*TilesHig+j
+            if (update) {
+            nearby = 0
+                if (tiles.includes(pos-1)) {
+                    nearby +=1
+                }
+                if (tiles.includes(pos+1)) {
+                    nearby +=1
+                }
+                if (tiles.includes(pos-TilesWid)) {
+                    nearby +=1
+                }
+                if (tiles.includes(pos+TilesWid)) {
+                    nearby +=1
+                }
+                if (tiles.includes(pos-TilesWid-1)) {
+                    nearby +=1
+                }
+                if (tiles.includes(pos+TilesWid+1)) {
+                    nearby +=1
+                }
+                if (tiles.includes(pos-TilesWid+1)) {
+                    nearby +=1
+                }
+                if (tiles.includes(pos+TilesWid-1)) {
+                    nearby +=1
+                }
+            if (tiles.includes(pos)) {
+                if (nearby < 2 || nearby > 3) {
+                    remove.push(pos)
+                }
+            } else {
+                if (nearby == 3) {
+                    add.push(pos)
+                }
+            }
         }
-        points.push(p1)
+            if (tiles.includes(pos)) {c.fillStyle = "#FFFFFF"}
+            else {c.fillStyle = "#243260"}
+            c.fillRect(startcoords[0]+i*(size+spacing), startcoords[1]+j*(size+spacing), size, size)
+            //console.log(i*(size+spacing), j*(size+spacing))
+        }
+    }
+    for (i=0; i<remove.length; i++) {
+    tiles.splice(tiles.indexOf(remove[i]), 1)
+    }
+    for (i=0; i<add.length; i++) {
+    tiles.push(add[i])
     }
 }
 
+displayscreen(0);
 
-//I'm so much better at coding now; let's make this good.
 
-//now you can enter an array of lines
-function displayLines(linearray) {
-    //linearray should be in the form [x1, y1, x2, y2, x3, y3...]
-    cv.ctx.strokeStyle = "#FFFFFF"
-    for (var i = 0; i<linearray.length/2; i++) {
-    cv.ctx.beginPath();
-    cv.ctx.moveTo(linearray[i*2], linearray[i*2+1]);
-    cv.ctx.lineTo(linearray[i*2+2], linearray[i*2+3]);
-    cv.ctx.stroke();
-    }   
-}
 
-function mLines(linearrayarray) {
-    for (var i = 0; i<linearrayarray.length; i++) {
-        displayLines(linearrayarray[i])
-    }
-}
 
 //function to set keyvariables
 function keytypeD(e) {
@@ -117,8 +147,10 @@ function keytypeU(e) {
 }
 
 
-
+t=1
+timing = 5
 function gameloop() {
+    if (!(t%timing)) {
     //clear screen
     cv.clear()
 
@@ -127,5 +159,6 @@ function gameloop() {
     document.body.onkeyup = function(event) {keytypeU(event)}
 
     //display to screen
-    mLines(points)
+    displayscreen(1)}
+    t+=1
 }
