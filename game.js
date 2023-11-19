@@ -1,26 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-</head>
-
-<style>
-body {
-    background-color: black;
-    overflow: hidden;
-}
-canvas {
-    margin-left: 0px;
-    margin-top: 0px;
-}
-</style>
-
-<body>
-<button id="input1" style = "height:50px;width:50px;position:fixed;bottom:0px;font-size:8px">Generate</button>
-<button id="input2" style = "height:50px;width:50px;position:fixed;top:0px">Reset</button>
-  <button id="input3" style = "height:50px;width:50px;position:fixed;right:0px">Pause</button>
-<script>
-    
-
 var cv = {
     canvas : document.createElement("canvas"),
     start : function() {
@@ -219,7 +196,3 @@ function gameloop() {
     if (!(t%timing)) { displayscreen(1)} else {displayscreen(0)}
     if (clock) {t+=1}
 }
-</script>
-</body>
-
-</html>
