@@ -1,14 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
 
+<style>
+body {
+    background-color: black;
+    overflow: hidden;
+}
+canvas {
+    margin-left: 0px;
+    margin-top: 0px;
+}
+</style>
+
+<body>
+<button id="input1" style = "height:50px;width:50px;position:fixed;bottom:0px;font-size:8px">Generate</button>
+<button id="input2" style = "height:50px;width:50px;position:fixed;top:0px">Reset</button>
+  <button id="input3" style = "height:50px;width:50px;position:fixed;right:0px">Pause</button>
+<script>
+    
 
 var cv = {
     canvas : document.createElement("canvas"),
     start : function() {
-        this.canvas.height = 2000;  
-        this.canvas.width = 2000;
+        this.canvas.height = 700;  
+        this.canvas.width = 700;
         this.ctx = this.canvas.getContext("2d");   
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.interval = setInterval(gameloop, 20);
-        this.box = [0, 0, 2000, 2000]   
+        this.box = [0, 0, 1000, 1000]
         //this is good since it lines up pixels with lines
         //this.ctx.translate(0.5, 0.5)
     },
@@ -20,26 +41,26 @@ var cv = {
 }
 
 
-startcoords = [0, 0]
+startcoords = [20, 20]
 c = cv.ctx
 wid = 20
 hig = 20
 spacing = 1
-size = 10
+size = 5
 
 cv.start()  
 
 keysPressed = []
 
 c = cv.ctx
-
+click = [-1, -1]
 let screen = [];
 
-var TilesWid = 150;
-var TilesHig = 150;
+var TilesWid = 100;
+var TilesHig = 100;
 w = TilesWid
 h = TilesHig
-tiles = [w*80+40, w*80+41, w*80+42, w*81+42, w*79+41]
+tiles = [w*40+40, w*40+41, w*40+42, w*41+42, w*39+41]
 
 function displayscreen(update) {
     remove = []
@@ -74,11 +95,15 @@ function displayscreen(update) {
                     nearby +=1
                 }
             if (tiles.includes(pos)) {
-                if (nearby < 2 || nearby > 3) {
+                //this is a cool ruleset:          
+					//if (nearby < 2 || nearby > 3 && nearby<7) 
+					if (nearby < 2 || nearby > 3) {
                     remove.push(pos)
                 }
             } else {
-                if (nearby == 3) {
+					//this is a cool ruleset:
+                //if (nearby == 3 || nearby>=7)
+					 if (nearby == 3) {
                     add.push(pos)
                 }
             }
@@ -86,6 +111,14 @@ function displayscreen(update) {
             if (tiles.includes(pos)) {c.fillStyle = "#FFFFFF"}
             else {c.fillStyle = "#243260"}
             c.fillRect(startcoords[0]+i*(size+spacing), startcoords[1]+j*(size+spacing), size, size)
+				
+				//add check for click here
+				if (click[0]<=startcoords[0]+i*(size+spacing)+size && click[0]>startcoords[0]+i*(size+spacing) &&
+				click[1]<=startcoords[1]+j*(size+spacing)+size && click[1]>startcoords[1]+j*(size+spacing)) {
+				if (tiles.includes(pos)) {remove.push(pos)} else {add.push(pos)}
+				click = [-1, -1]
+				}
+				
             //console.log(i*(size+spacing), j*(size+spacing))
         }
     }
@@ -121,6 +154,10 @@ function keytypeD(e) {
         if (!(keysPressed.indexOf("Down") in keysPressed)) {
         keysPressed.push("Down")}
         break;
+        case " ":
+        if (!(keysPressed.indexOf("Space") in keysPressed)) {
+        keysPressed.push("Space")}
+        break;
     }
 }
 //function to remove keyvariables
@@ -142,23 +179,47 @@ function keytypeU(e) {
         if (keysPressed.indexOf("Down") in keysPressed) {
         keysPressed.splice(keysPressed.indexOf("Down"), 1)}
         break;
+		  case " ":
+		  if (keysPressed.indexOf("Space") in keysPressed) {
+        keysPressed.splice(keysPressed.indexOf("Space"), 1)}
+        break;
 
     }
 }
-
-
+document.getElementById("input1").onclick = function() {
+for (var i = 0; i < TilesWid*TilesHig/10; i++) {
+tiles.push(Math.floor(Math.random()*TilesWid*TilesHig))}
+}
+  
+document.getElementById("input2").onclick = function() {tiles = []}
+pause = 0;
 t=1
-timing = 5
-function gameloop() {
-    if (!(t%timing)) {
-    //clear screen
-    cv.clear()
+timing = 2
+clock = true
+document.getElementById("input3").onclick = function() {pause = 1; console.log(pause)}
+  
 
+
+function paused() {
+  if (clock) {clock = false; t= (t%2) ? t : t+1} else {clock = true}
+}
+  
+function gameloop() {
+	if (keysPressed.includes("Space") || pause) {paused(); pause = 0;}
+    
+    //clear screen
+    
     //determine which keys are pressed when
     document.body.onkeydown = function(event) {keytypeD(event)}
     document.body.onkeyup = function(event) {keytypeU(event)}
-
+	 document.body.onclick = function(event) {click = [event.pageX-size-spacing, event.pageY-size-spacing]}
+	 
+	 cv.clear();
     //display to screen
-    displayscreen(1)}
-    t+=1
+    if (!(t%timing)) { displayscreen(1)} else {displayscreen(0)}
+    if (clock) {t+=1}
 }
+</script>
+</body>
+
+</html>
