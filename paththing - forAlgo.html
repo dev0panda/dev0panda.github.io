@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script>
+
+
+
+    offset = [200, 200]
+    //holy shit I'm implementing a graph here
+    v = []
+    e = []
+    pos = [0,0]
+    moving = [0,0]
+    speed = 0.5
+    border = 1
+    target = [15,18]
+    size = 10
+    obstacles = []
+    delay = 5
+    paused = 0
+    /**for (var i = 0; i<10; i++) {
+        obstacles.push([10, 10+i])
+    }**/
+    
+
+        
+    addNode(pos)
+    function startMoveS(d, rev) {
+        if (!rev) rev = 0
+        k = ["w", "a", "s", "d", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]
+        dir = [[0, -1], [-1, 0], [0, 1], [1, 0]]
+
+        for (var i=0; i<k.length; i++) {
+            if (d==k[i]) {
+                if (moving[0]<1 && dir[i%4][0]>0 || moving[0]>-1 && dir[i%4][0]<0 || rev) moving[0] += (-2*(rev)+1)*dir[i%4][0]
+                if (moving[1]<1 && dir[i%4][1]>0 || moving[1]>-1 && dir[i%4][1]<0 || rev) moving[1] += (-2*(rev)+1)*dir[i%4][1]
+            }
+        }
+        
+    }
+    function addNode(v1, v2) {
+        if (!v2) {
+            v.push(v1.slice())
+            return
+        }
+        v.push(v2.slice())
+        e.push([v1.slice(), v2.slice()])
+    }
+
+
+    function indexOfArr(arr1, fnd1) {
+    var i, len1;
+
+    //compare every element on the array
+    for (i = 0, len1 = arr1.length; i < len1; i++) {
+
+        //index missing, leave to prevent false-positives with 'undefined'
+        if (!(i in arr1)) {
+            continue;
+        }
+
+        //if they are exactly equal, return the index
+        if (elementComparer(arr1[i], fnd1)) {
+            return i;
+        }
+    }
+
+    //no match found, return false
+    return -1;
+}
+
+function elementComparer(fnd1, fnd2) {
+    var i, len1, len2, type1, type2, iin1, iin2;
+
+    //store the types of fnd1 and fnd2
+    type1 = typeof fnd1;
+    type2 = typeof fnd2;
+
+    //unwanted results with '(NaN!==NaN)===true' so we exclude them
+    if (!((type1 == "number" && type2 == "number") && (fnd1 + "" == "NaN" && fnd2 + "" == "NaN"))) {
+
+        //unwanted results with '(typeof null==="object")===true' so we exclude them
+        if (type1 == "object" && fnd1 + "" != "null") {
+            len1 = fnd1.length;
+
+            //unwanted results with '(typeof null==="object")===true' so we exclude them
+            if (type2 == "object" && fnd2 + "" != "null") {
+                len2 = fnd2.length;
+
+                //if they aren't the same length, return false
+                if (len1 !== len2) {
+                    return false;
+                }
+
+                //compare every element on the array
+                for (i = 0; i < len1; i++) {
+
+                    iin1 = i in fnd1;
+                    iin2 = i in fnd2;
+
+                    //if either index is missing...
+                    if (!(iin1 && iin2)) {
+
+                        //they both are missing, leave to prevent false-positives with 'undefined'
+                        if (iin1 == iin2) {
+                            continue;
+                        }
+
+                        //NOT the same, return false
+                        return false;
+                    }
+
+                    //if they are NOT the same, return false
+                    if (!elementComparer(fnd1[i], fnd2[i])) {
+                        return false;
+                    }
+                }
+            } else {
+                //NOT the same, return false
+                return false;
+            }
+        } else {
+
+            //if they are NOT the same, return false
+            if (fnd1 !== fnd2) {
+                return false;
+            }
+        }
+    }
+
+    //if it successfully avoided all 'return false', then they are equal
+    return true;
+}
+
+
+    function connect(v1, v2) {
+        e.push([v1.slice(), v2.slice()])
+    }
+    function distance(ar1, ar2) {
+        //removed math.sqrt
+        return (ar1[0]-ar2[0])*(ar1[0]-ar2[0])+(ar1[1]-ar2[1])*(ar1[1]-ar2[1])
+    }
+    function getSquare(coords) {
+        //this is trickyish, but solving it will make this so much easier
+        return [Math.floor((coords[0]-offset[0])/size),Math.floor((coords[1]-offset[1])/size)]
+    }
+    function moveRandom() {
+        prev = pos.slice()
+        test = prev.slice()
+        dl = [distance([pos[0]+1, pos[1]], target),distance([pos[0]-1, pos[1]], target),distance([pos[0], pos[1]+1], target),distance([pos[0], pos[1]-1], target)]
+        n = dl.indexOf(Math.min.apply(Math, dl))
+        if (n==0) test[0]+=1
+        if (n==1) test[0]-=1
+        if (n==2) test[1]+=1
+        if (n==3) test[1]-=1
+        tr = false
+        while (indexOfArr(obstacles, test) != -1) {
+            //console.log(n)
+            dl[n] = Math.pow(2, 31)
+            test = prev.slice()
+            n = dl.indexOf(Math.min.apply(Math, dl))
+            if (n==0) test[0]+=1
+            if (n==1) test[0]-=1
+            if (n==2) test[1]+=1
+            if (n==3) test[1]-=1
+        }
+        
+        pos = test.slice()
+        addNode(prev, pos)
+        //if I want to do pathfinding, a simple method would be to instead loop through these direction possibilities
+        //and pick whichever one reduces the total distance to the target position the most
+    }
+function start() {
+
+
+    canvas = document.getElementById("canvas")
+    
+    canvas.width = 500;
+    canvas.height = 500;
+    canvas.style.backgroundColor = "#2c2f33" 
+
+    ctx = canvas.getContext("2d")
+    ctx.fillStyle = "#008888"
+    ctx.fillRect(100, 100, 100, 100)
+
+    function display() {
+        ctx.fillStyle = "#008888"
+        ctx.fillRect(0, 0, 1000, 1000)
+
+        for (let i = 0; i < v.length; i++) {
+            
+            ctx.fillStyle = "#000000"
+            if (v[i][0] == pos[0] && v[i][1] == pos[1]) ctx.fillStyle = "#00FF00"
+            ctx.fillRect(v[i][0]*size+offset[0]-size/2, v[i][1]*size+offset[1]-size/2, size, size)
+            ctx.fillStyle = "#FFFFFF"
+            ctx.fillRect(v[i][0]*size+offset[0]-size/2+border, v[i][1]*size+offset[1]-size/2+border, size-2*border, size-2*border)
+        }
+        for (let i = 0; i < obstacles.length; i++) {
+            
+            ctx.fillStyle = "#000000"
+            if (obstacles[i][0] == pos[0] && obstacles[i][1] == pos[1]) ctx.fillStyle = "#00FF00"
+            ctx.fillRect(obstacles[i][0]*size+offset[0]-size/2, obstacles[i][1]*size+offset[1]-size/2, size, size)
+            ctx.fillStyle = "#0000FF"
+            ctx.fillRect(obstacles[i][0]*size+offset[0]-size/2+border, obstacles[i][1]*size+offset[1]-size/2+border, size-2*border, size-2*border)
+        }
+        ctx.fillStyle = "#FFFFFF"
+        ctx.fillRect(target[0]*size+offset[0]-size/2, target[1]*size+offset[1]-size/2, size, size)
+        ctx.fillStyle = "#00FFFF"
+        ctx.fillRect(target[0]*size+offset[0]-size/2+border, target[1]*size+offset[1]-size/2+border, size-2*border, size-2*border)
+    }
+    document.body.onkeydown = function(e) {
+        e=e.key
+        startMoveS(e)
+        if (e==" ") {
+            paused = 1-paused
+            //console.log("space")
+        }
+    }
+    document.body.onkeyup = function(e) {
+        e=e.key
+            startMoveS(e, 1)
+    }
+    document.body.onmousedown = function (e) {
+        if (e.button == 0) target = getSquare([e.x, e.y])
+        if (e.button == 2) obstacles.push(getSquare([e.x, e.y]))
+    }
+    
+    document.body.onwheel = function (e) {
+        if (e.deltaY>0) {
+            if (size<10) {size+=1} else {size+=Math.floor(Math.min(Math.pow(2, Math.floor(size/50)), 50))}
+        } else {
+            if (size<10) {if (size>1) size-=1} else {size-=Math.floor(Math.min(Math.pow(2, Math.floor(size/50)), 50))}
+        }
+    }
+    t=0
+    looping = setInterval(function() {
+        offset[0]-=moving[0]*speed*size; offset[1]-=moving[1]*speed*size; 
+        if (t%delay==0 && !paused) moveRandom()
+        display()
+
+        if (!paused)t+=1  
+    }, 10)
+
+
+
+
+
+}
+
+
+        </script>
+    </head>
+    <body onload = "start()">
+        <canvas id ="canvas" oncontextmenu="return false;""></canvas>
+    </body>
+</html>

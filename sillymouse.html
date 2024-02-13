@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body {
+    background-color: black;
+    overflow: hidden;
+}
+canvas {
+    margin-left: 0px;
+    margin-top: 0px;
+}
+        </style>
+        <script>
+center = [0,0]
+mousepos = [0,0]
+scale = 100
+document.onwheel = function (e) {
+       
+if (e.deltaY > 0) {
+         scale+=1;
+        } else scale-=1
+}
+
+document.onmousemove = function (e) {
+    mousepos = [e.pageX,e.pageY]
+}
+
+window.addEventListener("load", (event) => {
+const fps = 100
+
+var cv = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.height = 600;  
+        this.canvas.width = 600;
+        this.ctx = this.canvas.getContext("2d");  
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.interval = setInterval(gameloop, 1000/fps);
+    },
+    clear : function() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = "#101820";
+        this.ctx.fillRect(0, 0, 600, 600);      
+    }
+}
+
+cv.start()
+ctx = cv.ctx
+
+center = [cv.canvas.width/2, cv.canvas.height/2]
+
+
+
+
+function distance(p1, p2) {
+    return Math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
+}
+
+
+
+var objects = []
+
+class gameObject_rect {
+    constructor(position, size, color="#000") {
+        this.position=position
+        this.size = size
+this.center = [position[0]+size[0]/2, position[1]+size[1]/2]
+        this.color=color
+        objects.push(this)
+    }
+    draw() {
+        cv.ctx.fillStyle = this.color;
+        cv.ctx.fillRect(this.position[0], this.position[1], this.size[0], this.size[1]);      
+    }
+    move(vector) {
+        this.position[0]+=vector[0]
+        this.position[1]+=vector[1]
+this.center = [position[0]+size[0]/2, position[1]+size[1]/2]
+    }
+}
+
+a = new gameObject_rect([50, 50], [10,10], "#fff")
+
+l = []
+for (var i=0; i<4000; i++) {
+    l.push(new gameObject_rect([center[0]+100-200*Math.random(), center[1]+100-200*Math.random()], [10,10], "#fff"))
+}
+
+
+
+
+
+function drawObjects(list) {
+    for (var i=0; i<list.length; i++) {
+        list[i].draw()
+    }
+}
+
+
+
+t=0
+function gameloop() {
+
+    for (var i=0; i<objects.length; i++) {
+d = distance(objects[i].position, center)
+            objects[i].position = [objects[i].position[0]*101/100-mousepos[0]/100, objects[i].position[1]*101/100-mousepos[1]/100]
+            if (d>500) {
+            objects[i].position = [mousepos[0]+200-400*Math.random(), mousepos[1]+200-400*Math.random()]
+           
+            }
+d = distance([objects[i].position[0]+objects[i].size[0]/2, objects[i].position[1]+objects[i].size[1]/2], mousepos)+20
+objects[i].size = [20000/d/d, 20000/d/d]
+d = distance([objects[i].position[0]+objects[i].size[0]/2, objects[i].position[1]+objects[i].size[1]/2], mousepos)+20
+objects[i].size = [20000/d/d, 20000/d/d]
+objects[i].color="rgba("+Math.floor(128+128*Math.sin(objects[i].size[0]*100/scale+2*scale)) + ", " +Math.floor(128+128*Math.sin(2*scale+objects[i].size[0]*200/scale))+", "
++Math.floor(128+128*Math.sin(objects[i].size[0]*10/scale+0.3*scale))+", " + (1-0.6*(Math.sin(scale/20)**2)*Math.random()) + ")";
+
+
+//objects[i].position = [objects[i].position[0]-10000/d/d, objects[i].position[1]-10000/d/d]
+    }
+   
+    cv.clear()
+    drawObjects(objects)
+    t+=1
+}      
+
+});
+        </script>
+        <noscript>
+            enable javascript for this lmao
+        </noscript>
+    </head>
+    <body>
+    </body>
+</html>

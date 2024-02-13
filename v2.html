@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body {
+    background-color: black;
+    overflow: hidden;
+}
+canvas {
+    margin-left: 100px;
+    margin-top: 0px;
+}
+        </style>
+        <script>
+truecenter = [0,0]
+center = [0,0]
+offset = [0,0]
+mousepos = [0,0]
+scale = 100
+oldscale = scale
+updating = false
+
+document.onwheel = function (e) {
+        center = [mousepos[0], mousepos[1]]
+        offset[0]+=(mousepos[0]-truecenter[0])*.5
+        offset[1]+=(mousepos[1]-truecenter[1])*.5
+
+        updating = true
+        oldscale = scale
+	if (e.deltaY > 0) {
+        if (scale<10000) {
+            scale+=200; 
+        } else {
+            scale+=0.2*scale; 
+        }
+         
+        } else if (scale>50) {
+         scale-=200; 
+         if (scale<10000) {
+            scale-=0.2*scale; 
+        }
+        }
+        
+
+}
+
+document.onmousemove = function (e) {
+    updating = true
+    mousepos = [e.pageX,e.pageY] 
+}
+
+document.onkeydown = function (e) {
+    console.log(e.key)
+    if (e.key=="a") {offset[0]-=40*(1-50/scale)}
+    if (e.key=="d") {offset[0]+=40*(1-50/scale)}
+    if (e.key=="w") {offset[1]-=40*(1-50/scale)}
+    if (e.key=="s") {offset[1]+=40*(1-50/scale)}
+    if (e.key) {updating = true}
+}
+
+window.addEventListener("load", (event) => {
+const fps = 20
+
+var cv = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.height = 300;  
+        this.canvas.width = 300;
+        this.ctx = this.canvas.getContext("2d");   
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.interval = setInterval(gameloop, 1000/fps);
+    },
+    clear : function() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = "#101820";
+        this.ctx.fillRect(0, 0, 600, 600);      
+    }
+}
+
+cv.start()
+ctx = cv.ctx
+
+center = [cv.canvas.width/2, cv.canvas.height/2]
+truecenter = center
+
+
+function iter(z, c1) {
+
+a=z[0]
+b=z[1]
+c=c1[0]
+g=c1[1]
+
+//console.log([a**2-b**2+c, 2*a*b+g,  z, c1])
+return [a**2-b**2+c, 2*a*b+g]
+
+}
+
+function distance(p1, p2) {
+    return Math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
+}
+
+
+function coloration (position) {
+    c0 = [(mousepos[0]-truecenter[0]+offset[0])/scale, (mousepos[1]-truecenter[1]+offset[1])/scale]
+    z0 = [(position[0]-truecenter[0]+offset[0])/scale, (position[1]-truecenter[1]+offset[1])/scale]
+    //console.log(position, cv.canvas.width, scale, c)
+    it = 40+Math.floor(scale/100)
+    for (var i=0; i<it; i++) {
+        zold = z0
+        z0 = iter(z0,c0)
+    }
+    if (distance(z0, center)>100000) {
+        return 1
+    } else if (distance(z0, center)<100000) {
+        return 0
+    } else {return 1}
+    return 1
+}
+
+/**
+function coloration (position) {
+    z0 = [0,0]
+    c0 = [(position[0]-truecenter[0]+offset[0])/scale, (position[1]-truecenter[1]+offset[1])/scale]
+    //console.log(position, cv.canvas.width, scale, c)
+    it = 40+Math.floor(scale/100)
+    for (var i=0; i<it; i++) {
+        zold = z0
+        z0 = iter(z0,c0)
+    }
+    if (distance(z0, center)>100000) {
+        return 1
+    } else if (distance(z0, center)<100000) {
+        return 0
+    } else {return 1}
+    return 1
+}
+**/
+
+
+t=0
+function gameloop() {
+    //if (updating || t<100) {
+    if (updating) {
+    cv.clear()
+    d = ctx.getImageData(0,0, cv.canvas.width, cv.canvas.height)
+    pixels = d.data
+
+    
+    for (var i=0; i<cv.canvas.height*cv.canvas.width; i++) {
+
+    var x = i%cv.canvas.height
+    var y = Math.floor(i/cv.canvas.height);
+    md = parseInt(coloration([x,y])+coloration([x+0.2, y+0.2]))/2
+    //md = 1
+    var r = Math.floor(md*255)
+    var g = Math.floor(md*255)
+    var b = Math.floor(md*255)
+    var off = (y * d.width + x) * 4;
+    pixels[off] = r;
+    pixels[off + 1] = g;
+    pixels[off + 2] = b;
+    pixels[off + 3] = 255;
+    }
+    ctx.putImageData(d, 0, 0);
+    
+    t+=1
+    updating = false
+    }
+}       
+
+});
+        </script>
+        <noscript>
+            enable javascript for this lmao
+        </noscript>
+    </head>
+    <body>
+    </body>
+</html>
+
+
