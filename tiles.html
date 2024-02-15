@@ -1,0 +1,410 @@
+<html>
+  <head>
+    <style>
+      * {background-color: #204080;}
+    </style>
+  </head>
+  <body>
+    <img src=https://freeimghost.net/images/2023/12/01/grass-watertileset1fbec629e219bfa5.png? id =tiles1>
+
+<img src=https://freeimghost.net/images/2023/12/01/waters.png id=tiles>
+  </body>
+  <script>
+    
+
+function check(a1, a2, cond1, cond2, alt) {
+    return ((a1 == cond1 && a2 == cond2)||(a1 == cond1 && a2 == alt))//||(a1 == alt && a2 == cond2)||(a1 == alt && a2 == alt))
+}
+
+
+//returns all acceptable new tiles when given 4 surrounding tiles (l, r, u, d):
+function acceptableTiles(surrounding) {
+var none = 0;
+var grass = 1;
+var grass_water = 2;
+var water_grass = 3;
+var water = 4;
+var water_deep = 5;
+var water_deep_water = 6;
+var deep_water_water = 7;
+var deep_water = 8
+var any = 9;
+  
+
+
+
+
+var tilingrules = [
+[any, any, any, any],
+[grass_water, water_grass, grass, grass],
+[grass, grass_water, water_grass, grass],
+[grass_water, water_grass, grass_water, water_grass],
+
+[grass, grass, grass, grass],
+[water_grass, grass, grass, grass_water],
+[grass, grass, grass_water, water_grass],
+[water_grass, grass_water, water_grass, grass_water],
+
+[water, water, water_grass, grass_water],
+[grass_water, water, water_grass, grass],
+[grass_water, water, water, water_grass],
+[none, none, none, none],
+
+[water, water_grass, grass, grass_water],
+[grass, grass, grass, grass],
+[grass, grass_water, water, water_grass],
+[water, water, water, water],
+
+[water, water_grass, grass_water, water],
+[water_grass, grass, grass_water, water],
+[water_grass, grass_water, water, water],
+[none, none, none, none],
+  
+/*
+[any, any, any, any],
+[deep_water_water, water_deep_water, water, water],
+[water, deep_water_water, water_deep_water, water],
+[deep_water_water, water_deep_water, deep_water_water, water_deep_water],
+
+[water, water, water, water],
+[water_deep_water, water, water, deep_water_water],
+[water, water, deep_water_water, water_deep_water],
+[water_deep_water, deep_water_water, water_deep_water, deep_water_water],
+  
+[deep_water, deep_water, water_deep_water, deep_water_water],
+[deep_water_water, deep_water, water_deep_water, water],
+[deep_water_water, deep_water, deep_water, water_deep_water],
+[none, none, none, none],
+  
+[deep_water, water_deep_water, water, deep_water_water],
+[water, water, water, water],
+[water, deep_water_water, deep_water, water_deep_water],
+[deep_water, deep_water, deep_water, deep_water],
+  
+[deep_water, water_deep_water, deep_water_water, deep_water],
+[water_deep_water, water, deep_water_water, deep_water],
+[water_deep_water, deep_water_water, deep_water, deep_water],
+[none, none, none, none]*/
+]
+    allowed = []
+    //loops through the 4 surrounding orthogonal tiles of the chosen tile to find edge detection
+    //
+    //                              #
+    //                            _[ ]#
+    //                              #
+    //
+    var possible = []
+    for(let i = 0; i<surrounding.length; i++) {
+        l = (i+2)%surrounding.length
+      if (surrounding[i]>=0 && surrounding[i]<tiles.length) {
+        bound = tilingrules[tiles[surrounding[i]]][l]
+      if (bound == grass_water) {possible.push(water_grass)}
+      else if (bound == water_grass) {possible.push(grass_water)}
+        else if (!((surrounding[i]%TilesWid==0 && surrounding[l]%TilesWid==TilesWid-1) || (surrounding[i]%TilesWid==TilesWid-1 && surrounding[l]%TilesWid==0))) {possible.push(bound)}
+        else {possible.push(any)}
+    } else {possible.push(any)}
+}
+    //console.log(possible)
+    //now it has to find all allowed tiles from possible surrounding spaces:
+    //remember, if it has a surrounding of "any", all conditions are ignored and if it has a surrounding of "none," it cannot be placed
+
+    //checks all possible conditions (skips 0)
+  //console.log(possible)
+    var a = 0
+    for (let i=1; i<tilingrules.length; i++) {
+
+        //checks all sides (--forgets to account for rotating grass-water boundaries-- not anymore)
+        a = 1
+        for (let j=0; j<possible.length; j++) {
+            //l = (j-2)%possible.length
+            if (!(possible[j] == tilingrules[i][j] || possible[j] == any)) {
+                a = 0
+              //console.log(possible[j],tilingrules[i][j])
+            }
+        }
+        if (a && tilingrules[i][0]!=none) {allowed.push(i);}
+else {}
+    }
+
+    //if (allowed.indexOf(15) != -1) {
+      //console.log(allowed)
+    //} 
+    if (allowed.length==0) {allowed = [11]}
+    return allowed
+}
+
+
+function arrAddValue(arr, value) {
+    if (arr.indexOf(value) == -1) {
+        arr.push(value)
+    }
+}
+
+//returns all candidate new tiles to flip
+function candidateTiles(ti, h) {
+var fcandidates = []
+candidates = []
+    for (i=0; i<ti.length; i++) {
+        if (ti[i]!=0) {
+            //needs to be modified to avoid propagating through other side of screen
+            arrAddValue(fcandidates, i-1);
+            arrAddValue(fcandidates, i+1);
+            arrAddValue(fcandidates, i-h);
+            arrAddValue(fcandidates, i+h);
+        }
+    }
+    for (i=0; i<fcandidates.length; i++) {
+        if (ti[fcandidates[i]]==0) {
+            candidates.push(fcandidates[i])
+        } 
+    }
+    return candidates;
+}
+
+
+//this is okay: [1, 10, 10, 2,   400, 10, 10, 2,   8, 4, 8, 1,   4, 800, 4, 600,   8, 4, 8]
+//this is pretty good: [1, 16, 16, 2,   240, 16, 16, 2,   8, 8, 8, 1,   8, 480, 8, 600,   8, 8, 8]
+//weird: [1, 1, 1, 2,   4, 1, 1, 2,   1, 2, 1, 1,   2, 8, 2, 10,   1, 2, 1]
+//random:[1, Math.random(), Math.random(), Math.random(),   Math.random(), Math.random(), Math.random(), Math.random(),   Math.random(), Math.random(), Math.random(), 1,   Math.random(), Math.random(), Math.random(), Math.random(),   Math.random(), Math.random(), Math.random()]
+var tileweights = [1, 16, 16, 2,   240, 16, 16, 2,   8, 8, 8, 1,   8, 480, 8, 600,   8, 8, 8]
+
+var t = 0
+var currentSquare = 0
+var tilesimage = document.getElementById("tiles1")
+var tilesimage1 = document.getElementById("tiles1")
+var cv = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.height = 1000;  
+        this.canvas.width = 1000;
+        this.ctx = this.canvas.getContext("2d");   
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.interval = setInterval(gameloop, 20);
+        this.box = [0, 0, 1000, 1000]
+        //this is good since it lines up pixels with lines
+        //this.ctx.translate(0.5, 0.5)
+    },
+    clear : function() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = "#102040";
+        this.ctx.fillRect(this.box[0], this.box[1], this.box[2], this.box[3]);      
+    }
+}
+var dict = 
+[[34, 19],
+[52, 19],
+[70, 19],
+[88, 19],
+[34, 37],
+[52, 37],
+[70, 37],
+[88, 37],
+[34, 57],
+[52, 57],
+[70, 57],
+[88, 57],
+[34, 75],
+[52, 75],
+[70, 75],   
+[88, 75],
+[34, 93],
+[52, 93],
+[70, 93],
+[88, 93]]
+
+
+
+
+var startcoords = [50, 50]
+var spacing = 0
+var size = 16
+
+function drawtile(dictindex, i, j) {
+    var c = cv.ctx
+    //img = (dictindex<dictindex.length)*tilesimage+(dictindex>=dictindex.length)*tilesimage1
+    //c.drawImage(img, dict[dictindex%(dictindex.length)][0], dict[dictindex%(dictindex.length)][1], 16, 16, startcoords[0]+i*(size+spacing), startcoords[1]+j*(size+spacing), size, size)
+    c.drawImage(tilesimage, dict[dictindex][0], dict[dictindex][1], 16, 16, startcoords[0]+i*(size+spacing), startcoords[1]+j*(size+spacing), size, size)
+
+}
+
+
+
+cv.start()  
+var c = cv.ctx
+var keysPressed = []
+
+var click = [-1, -1]
+let screen = [];
+
+var TilesWid = 50;
+var TilesHig = 50;
+w = TilesWid
+h = TilesHig
+tiles = []
+selectedSquare = 0
+
+function displayscreen(draw) {
+    for (i=0; i<TilesWid; i++) {
+        for (j=0; j<TilesHig; j++) {
+            if (!draw) {tiles.push(0)}
+            currentindex =i*TilesHig+j
+            currentSquare = tiles[currentindex]
+            //c.fillStyle = "#243260"
+            //c.fillRect(startcoords[0]+i*(size+spacing), startcoords[1]+j*(size+spacing), size, size)
+				  
+            if (draw) {
+                if (currentindex == selectedSquare) {drawtile(11, j, i)}
+                else{drawtile(currentSquare, j, i)}
+            }
+        }
+    }
+}
+
+
+
+displayscreen(0);
+
+
+
+
+//function to set keyvariables (also for onkeydown events)
+function keytypeD(e) {
+    switch (e.key) {
+        case "ArrowLeft":
+
+            selectedSquare-=1
+
+        if (!(keysPressed.indexOf("Left") in keysPressed)) {
+        keysPressed.push("Left")}
+        break;
+        case "ArrowRight":
+            selectedSquare+=1
+        if (!(keysPressed.indexOf("Right") in keysPressed)) {
+        keysPressed.push("Right")}
+        break;
+        case "ArrowUp":
+            selectedSquare-=TilesWid
+        if (!(keysPressed.indexOf("Up") in keysPressed)) {
+        keysPressed.push("Up")}
+        break;
+        case "ArrowDown":
+            
+            selectedSquare+=TilesWid
+
+        if (!(keysPressed.indexOf("Down") in keysPressed)) {
+        keysPressed.push("Down")}
+        break;
+        case " ":
+
+            tiles[selectedSquare] = 13
+
+        if (!(keysPressed.indexOf("Space") in keysPressed)) {
+        keysPressed.push("Space")}
+        break;
+    }
+}
+//function to remove keyvariables
+function keytypeU(e) {
+    switch (e.key) {
+        case "ArrowLeft":
+        if (keysPressed.indexOf("Left") in keysPressed) {
+        keysPressed.splice(keysPressed.indexOf("Left"), 1)}
+        break;
+        case "ArrowRight":
+        if (keysPressed.indexOf("Right") in keysPressed) {
+        keysPressed.splice(keysPressed.indexOf("Right"), 1)}
+        break;
+        case "ArrowUp":
+        if (keysPressed.indexOf("Up") in keysPressed) {
+        keysPressed.splice(keysPressed.indexOf("Up"), 1)}
+        break;
+        case "ArrowDown":
+        if (keysPressed.indexOf("Down") in keysPressed) {
+        keysPressed.splice(keysPressed.indexOf("Down"), 1)}
+        break;
+		case " ":
+		if (keysPressed.indexOf("Space") in keysPressed) {
+        keysPressed.splice(keysPressed.indexOf("Space"), 1)}
+        break;
+
+    }
+}
+//change this variable to make new tiles generate/not
+gen = 1
+//sets up screen with 1 random filled in spot
+displayscreen(1);
+rft = [Math.floor(Math.random()*11), Math.floor(Math.random()*7)]
+tiles[Math.floor(Math.random()*tiles.length)] = (rft[0]+rft[1])*(rft[0]+rft[1]!=11)+(rft[0]+rft[1]==11)*rft[1]
+
+
+function weightedrandom(items, weights) {
+    var i;
+
+    for (i = 1; i < weights.length; i++)
+        weights[i] += weights[i - 1];
+    
+    var random = Math.random() * weights[weights.length - 1];
+    
+    for (i = 0; i < weights.length; i++)
+        if (weights[i] > random)
+            break;
+    
+    return items[i];
+}
+
+function updatetiles() {
+    
+    cand = candidateTiles(tiles, TilesHig)
+    //s = cand[Math.floor(Math.random()*cand.length)]
+    num = []
+    for (i=0; i<cand.length; i++) {
+        n=cand[i]
+    num.push(acceptableTiles([n-1, n-TilesHig, n+1, n+TilesHig]).length)
+    }
+  min = Math.min.apply(Math, num)
+  minentropy = []
+      for (i=0; i<cand.length; i++) {
+        m = cand[i]
+        //if (num[i]==min && acceptableTiles([m-1, m-TilesHig, m+1, m+TilesHig]) != 11) {
+        if (num[i]==min) {
+          minentropy.push(m)
+        }
+    }
+    s = minentropy[Math.floor(Math.random()*minentropy.length)]
+
+    rand = acceptableTiles([s-1, s-TilesHig, s+1, s+TilesHig]).sort(function(a, b){return a - b});
+    //p = rand[Math.floor(Math.random()*rand.length)]
+    usedweights = []
+    for (i=0; i<rand.length; i++) {
+        usedweights.push(tileweights[rand[i]])
+    }
+
+    tiles[s] = weightedrandom(rand, usedweights)//rand[Math.floor(Math.random()*rand.length)]
+}
+
+
+
+function gameloop() {
+    //determine which keys are pressed when
+    document.body.onkeydown = function(event) {keytypeD(event)}
+    document.body.onkeyup = function(event) {keytypeU(event)}
+	 document.body.onclick = function(event) {click = [event.pageX-size-spacing, event.pageY-size-spacing]}
+
+	 cv.clear();
+
+    if (tiles.indexOf(0) !=-1 && gen) {
+//      for (i=0; i<8; i++) {
+ //       updatetiles()
+  //  }  
+    for (wink = 0; wink<8; wink++) {
+      updatetiles()
+          }
+    }
+
+    //display to screen
+    displayscreen(1)
+    t+=1
+}
+
+  </script>
+</html>
