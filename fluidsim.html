@@ -81,6 +81,9 @@ document.onmousemove = function (e) {
 }
 document.onmousedown = function (e) {
     clicking = true
+    x = e.pageX-5
+    y = e.pageY-5
+    mousepos = [(x-offset[0])*scale/10, (y-offset[1])*scale/10]
 }
 document.onmouseup = function(e) {
    clicking = false
