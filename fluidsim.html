@@ -12,21 +12,14 @@
     </style>
     <body>
 
-       <div class="slidecontainer" style = "top:20px; right: 20px">rate
+       <div class="slidecontainer" style = "top:60px; right: 20px">rate
   <input type="range" min="1" max="100" value="50" class="slider" id="rate">
     </div>
-
-          <div class="slidecontainer" style = "top:40px; right: 20px">spacing
-            <input type="range" min="0" max="100" value="50" class="slider" id="spacing">
-              </div>
-        <div class="slidecontainer" style = "top:60px; right: 20px">threshold
-        <input type="range" min="0" max="100" value="50" class="slider" id="threshold">
+    <div class="slidecontainer " style = "top:80px; right: 20px">control
+        <input type="range" min="0" max="100" value="50" class="slider" id="control">
           </div>
-          <div class="slidecontainer " style = "top:80px; right: 20px">control
-            <input type="range" min="0" max="100" value="50" class="slider" id="control">
-              </div>
                         <div class="slidecontainer " style = "top:100px; right: 20px">viscosity
-            <input type="range" min="0" max="100" value="50" class="slider" id="slide_a">
+            <input type="range" min="0" max="100" value="45" class="slider" id="slide_a">
               </div>
                         <div class="slidecontainer " style = "top:120px; right: 20px">"temperature"
             <input type="range" min="0" max="100" value="50" class="slider" id="slide_b">
@@ -40,6 +33,7 @@
               <div class="slidecontainer " style = "top:180px; right: 20px">color slider
                 <input type="range" min="0" max="100" value="50" class="slider" id="wcslider">
                   </div>
+       <p style = "color:white; font-size: 20px">Press this button a few times to get started:</p>
        <button onclick = "populate()">populate</button>
     </body>
     <head>
@@ -59,7 +53,7 @@ center = [0,0]
 mousepos = [0,0]
 offset = [0, 200]
 offsetspeed = [0, 0]
-scale = 215
+scale = 310
 var coll = false
 keys = []
 
@@ -98,7 +92,7 @@ document.onkeydown = function(e) {
 
 //window.addEventListener("load", (event) => {
 
-const fps = 24
+const fps = 30
 
 var cv = {
     canvas : document.createElement("canvas"),
@@ -151,7 +145,7 @@ class gameObject_rect {
         cv.ctx.fillStyle = this.color;
         cv.ctx.fillRect(10*this.position[0]/scale-0.5*10*this.size[0]/scale+offset[0], 10*this.position[1]/scale+offset[1]-0.5*10*this.size[1]/scale, 10*this.size[0]/scale, 10*this.size[1]/scale);      
     ctx.beginPath();
-ctx.arc(10*this.position[0]/scale-0.5*10*this.size[0]/scale+offset[0], 10*this.position[1]/scale+offset[1]-0.5*10*this.size[1]/scale, 0.1*320*document.getElementById("size").value/scale, 0, 2 * Math.PI);
+ctx.arc(10*this.position[0]/scale-0.5*10*this.size[0]/scale+offset[0], 10*this.position[1]/scale+offset[1]-0.5*10*this.size[1]/scale, 0.1*320/3  *document.getElementById("size").value/scale, 0, 2 * Math.PI);
 ctx.fillStyle = this.color
 ctx.fill();
 }
@@ -187,8 +181,7 @@ g = 2
 var rad = 0
 
 rate = 0.05*document.getElementById("rate").value
-threshold = 0.1*document.getElementById("threshold").value
-
+threshold = 0.1
 rightmost = 32000
 leftmost = 2000
 
@@ -233,9 +226,12 @@ d = 0
         objects[i].color = colorfromdensity(d)
         objects[i].speed = [objects[i].speed[0]*.9,objects[i].speed[1]*.9]
 
-objects[i].speed[1]+=g
+objects[i].speed[1]+=10*g
+
 if (objects[i].position[1]>10000) {objects[i].position[1]=10000-5;}
 objects[i].speed[1]-=rate*100/(10000-objects[i].position[1]+1)
+if (objects[i].position[0]<0) {objects[i].position[1]=0+5; objects[i].speed = [objects[i].speed[0]*0.1, objects[i].speed[1]*0.1]}
+objects[i].speed[1]+=rate*100/(objects[i].position[1]-0+1)
 if (objects[i].position[0]>rightmost) {objects[i].position[0]=rightmost-5; objects[i].speed = [objects[i].speed[0]*0.1, objects[i].speed[1]*0.1]}
 objects[i].speed[0]-=rate*100/(rightmost-objects[i].position[0]+1)
 if (objects[i].position[0]<leftmost) {objects[i].position[0]=leftmost+5; objects[i].speed = [objects[i].speed[0]*0.1, objects[i].speed[1]*0.1]}
@@ -263,8 +259,8 @@ function populate() {
 }
 function gameloop() {
     cv.clear()
-  rate = 0.005*Math.pow(1.2, document.getElementById("rate").value)
-  threshold = 0.1*document.getElementById("threshold").value
+  rate = 0.0005*Math.pow(1.2, document.getElementById("rate").value)
+  threshold = 0.1
   control = document.getElementById("control").value
   wcslider = 0.1*document.getElementById("wcslider").value
     display([0, 100000/scale+offset[1], 10000, 10000], "#400")
