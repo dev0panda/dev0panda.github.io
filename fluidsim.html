@@ -249,7 +249,6 @@ objects[i].speed[0]+=rate*100/(objects[i].position[0]-leftmost+1)
     for (var i=0; i<objects.length; i++) {
       d = Math.max(scale/2, distance(objects[i].position, mousepos)+scale)
       if (d<20*scale) {
-        console.log(d)
         objects[i].speed[0]+=(1-2*clicking)*500*control/d/d*(mousepos[0]-objects[i].position[0]+2)
       objects[i].speed[1]+=(1-2*clicking)*500*control/d/d*(mousepos[1]-objects[i].position[1]+2)
       }
@@ -272,7 +271,7 @@ function gameloop() {
   control = document.getElementById("control").value
   wcslider = 0.1*document.getElementById("wcslider").value
     display([0, 100000/scale+offset[1], 10000, 10000], "#400")
-    for (var i=0; i<3; i++) { updateloop()}
+    for (var i=0; i<2; i++) { updateloop()}
 
 }
 
