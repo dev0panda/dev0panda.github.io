@@ -219,7 +219,7 @@ d = 0
                 d+=1/rad/rad
                 //s = [-0.8*objects[i].speed[0]+0.2*objects[j].speed[0], -0.8*objects[i].speed[1]+0.2*objects[j].speed[1]]
                 s = Math.sqrt(objects[i].speed[0]*objects[i].speed[0]+objects[i].speed[1]*objects[i].speed[1])
-                if (rad<threshold) {objects[i].position = [objects[i].position[0]+2*objects[j].speed[0],objects[i].position[1]+2*objects[j].speed[1]]; objects[i].position = [objects[i].position[0]+5*Math.random(), objects[i].position[1]+5*Math.random()]} else if (rad<1000) {
+                if (rad<threshold) {objects[i].speed = [objects[i].speed[0]*.99,objects[i].speed[1]*.99]} else if (rad<1000) {
                 //if (rad<10) {objects[i].speed = [-objects[i].speed[0], -objects[i].speed[1]]} else {
                 objects[i].speed = [objects[i].speed[0]-rate*0.5*Math.min( ((objects[j].position[0]-objects[i].position[0])/rad)*(1-av*0.0001*rad)/(0.01+bv*0.0001*rad*bv*0.0001*rad), 200*rate),
                 objects[i].speed[1]-rate*0.5*Math.min(  ((objects[j].position[1]-objects[i].position[1])/rad)*(1-av*0.0001*rad)/(0.01+bv*0.0001*rad*bv*0.0001*rad), 200*rate)   ]
@@ -227,7 +227,7 @@ d = 0
             }
          }
         objects[i].color = colorfromdensity(d)
-        objects[i].speed = [objects[i].speed[0]*.9,objects[i].speed[1]*.9]
+        objects[i].speed = [objects[i].speed[0]*.98,objects[i].speed[1]*.98]
 
 objects[i].speed[1]+=10*g
 
