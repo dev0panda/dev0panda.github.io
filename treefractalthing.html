@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+    <style>
+        button {
+            height: 20px;
+            font-size: 10px;
+        }
+        div {
+            position: absolute;
+            color:white;
+        }
+    </style>
+    <body>
+
+    </div>
+    <div class="slidecontainer " style = "top:120px; right: 20px">rate
+        <input type="range" min="0" max="100" value="50" class="slider" id="rate">
+    </div>
+    <div class="slidecontainer " style = "top:140px; right: 20px">max iterations - <span style="color:red">high performance impact</span>
+        <input type="range" min="0" max="10" value="5" class="slider" id="maxit">
+    </div>
+    <div class="slidecontainer " style = "top:160px; right: 20px">angle change
+        <input type="range" min="0" max="100" value="45" class="slider" id="angle">
+    </div>
+    <div class="slidecontainer " style = "top:180px; right: 20px">length
+        <input type="range" min="0" max="100" value="50" class="slider" id="fractlen">
+    </div>
+    <div class="slidecontainer " style = "top:200px; right: 20px; color:yellow">color slider - <span style="color:#8DF">auto</span> (disabled for this version)
+        <input type="range" min="0" max="100" value="50" class="slider" id="col">
+    </div>
+    <div class="slidecontainer " style = "top:220px; right: 20px">stems - <span style="color:red">WARNING: VERY HIGH PERFORMANCE IMPACT</span>
+        <input type="range" min="0" max="5" value="2" class="slider" id="stems">
+    </div>
+    <div class="slidecontainer " style = "top:240px; right: 20px">angleoffset
+        <input type="range" min="0" max="100" value="0" class="slider" id="angleoffset">
+    </div>
+    <p style = "position: absolute; top:300px; right: 80px; color: white">Note: you can click on the screen to relocate the starting position of the fractal</p> 
+    </body>
+    <head>
+        <style>
+            body {
+    background-color: black;
+    overflow: hidden;
+}
+canvas {
+    margin-left: 0px;
+    margin-top: 0px;
+}
+        </style>
+        <script>
+
+center = [0,0]
+mousepos = [0,0]
+offset = [0, 0]
+offsetspeed = [0, 0]
+scale = 310
+var coll = false
+keys = []
+
+var dashtimer = 100
+var dashdir = [0,0]
+var dashspeed = 8
+
+function buttonfunction (direction) {
+    offset[0]+=100*direction[0]/scale
+    offset[1]+=100*direction[1]/scale
+}
+
+document.onwheel = function (e) {
+
+    if (e.deltaY > 0) {
+        scale+=1;
+    } else scale-=1
+//offset = [p.position[0]-cv.canvas.width, p.position[1]-cv.canvas.height]
+}
+clicking = false
+document.onmousemove = function (e) {
+    x = e.pageX-5
+    y = e.pageY-5
+    mousepos = [(x-offset[0]), (y-offset[1])]
+}
+
+
+
+//window.addEventListener("load", (event) => {
+
+const fps = 24
+
+var cv = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+       
+        this.canvas.height = 800;  
+        this.canvas.width = 1200;
+        this.ctx = this.canvas.getContext("2d");  
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        //this.ctx.translate(0.5, 0.5)
+        this.interval = setInterval(gameloop, 1000/fps);
+       
+    },
+    clear : function() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = "#101820";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);      
+    }
+}
+document.onmousedown = function (e) {
+    if (mousepos[0]<cv.canvas.width-20 && mousepos[1]<cv.canvas.height-20)center = mousepos
+    
+}
+cv.start()
+ctx = cv.ctx
+
+function drawline(pos1, pos2, size, color) {
+  ctx.beginPath();
+  ctx.strokeStyle = color
+  ctx.moveTo(pos1[0], pos1[1]);
+  ctx.lineTo(pos2[0], pos2[1]);
+  ctx.lineWidth = size;
+  ctx.stroke();
+}          
+
+//now, draw lines in a fractal pattern
+
+
+t=0
+          
+center = [cv.canvas.width, cv.canvas.height]
+
+
+function distance(p1, p2) {
+    return Math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
+}
+
+
+function colorfromdensity(density) {
+    density+=t/10
+    col = [
+            0.5+0.5*Math.sin(density+2),
+            0.5+0.5*Math.sin(density+4),
+            0.5+0.5*Math.sin(density+0)
+          ]
+   
+    return "rgb(" + 255*col[0] + ", " + 255*col[1] + ", " + 255*col[2] + ")"
+   
+}
+
+  
+  
+function fractalstep(flipdir, index, size, color, draw) {
+    //length+=0.05-0.1*Math.random()*size
+    //divergence+=0.05-0.1*Math.random()*size
+  poslist2.push([poslist[index][0]+length*Math.cos((directionlist[index]+(2*flipdir-1)*divergence+angleoffset)*3.142/180), poslist[index][1]-length*Math.sin((directionlist[index]+(2*flipdir-1)*divergence+angleoffset)*3.142/180)])
+    if (draw) drawline(poslist[index], poslist2[poslist2.length-1], size, color)   
+    directionlist2.push(directionlist[index]+(2*flipdir-1)*divergence+angleoffset)
+}  
+  
+
+
+function fractal(n, rate) {
+for (var i=0; i<n; i++) {
+  length *= rate
+  
+  poslist = poslist2.slice()
+  poslist2 = []
+  
+  directionlist = directionlist2.slice()
+  directionlist2 = []
+  
+  for (var j = 0; j<poslist.length; j++) {
+    
+    //adds two more points and their starting directions
+    for (var k=0; k<stems; k++) {
+        fractalstep(k, j, Math.min( 6, Math.max(1, Math.floor(4*(n-2*i)/n)  )), colorfromdensity(4-i/4), 1)
+        fractalstep(k, j, Math.min( 6, Math.max(1, Math.floor(4*(n-2*i)/n)  )), colorfromdensity(4-i/4), 1)
+    }
+    
+
+  }
+  
+  
+
+}
+  
+  
+  
+}
+
+var center = [500, 500]
+
+function mouseangle() {
+    return 360/3.142*Math.atan((mousepos[1]-center[1])/(1*(mousepos[0]==center[0])+mousepos[0]/scale-center[0]))
+}
+
+
+  oldlength = document.getElementById('fractlen').value*4
+function gameloop() {
+    t+=1
+    length = oldlength
+    if (t%2==0) {
+        stems = document.getElementById('stems').value
+  length = document.getElementById('fractlen').value*4
+  divergence = document.getElementById('angle').value
+  angleoffset = 50-document.getElementById('angleoffset').value
+  rate = document.getElementById('rate').value/100
+  maxit = document.getElementById('maxit').value
+    }
+    oldlength = length
+    cv.clear()
+  startpos = center
+
+  //divergence = 120
+  //divergence=t
+  directionlist = []
+  directionlist2 = [90]
+  poslist = []
+  poslist2 = [startpos]  
+
+  fractal(maxit, rate)
+  //drawline(startpos, [startpos[0], startpos[1]+5], 2, "#FFF")
+}
+
+        </script>
+        <noscript>
+            enable javascript for this lmao
+        </noscript>
+    </head>
+
