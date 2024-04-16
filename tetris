@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body {
+    background-color: black;
+    overflow: hidden;
+}
+canvas {
+    margin-left: 200px;
+    margin-top: 0px;
+}
+        </style>
+        <script>
+
+
+//______________________TO DO:______________________
+//  finish the piece list (1)
+//  use bag randomization rather than complete randomization (1)
+//  save pieces to the screen when they hit the bottom (1)
+//  add collision between playing and saved pieces (1)
+//  add rotation (1) NOTE: CURRENT ROTATION SYSTEM ALLOWS FOR SLIGHT CLIPPING AND FAILS ALONG EDGES
+//  add lineclearing (1)
+//  add a hold piece function (1)
+//  add a points system (1)
+//  add a start screen and finish screen (0)
+//  add levels with increased speed (0)
+//  make a competitive two-player mode (0)
+
+window.addEventListener("load", (event) => {
+const fps = 60
+
+
+holdtimer = 1
+
+var cv = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.height = 800;
+        this.canvas.width = 800;
+        this.ctx = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.t = 0;
+        this.twait = 0;
+        this.wdt = 0
+        this.hgt = 0
+        this.interval = setInterval(gameloop, 1000/fps);
+    },
+    clear : function() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = "#101820";
+        this.ctx.fillRect(0, 0, 800, 800);      
+    }
+}
+
+cv.start()
+
+
+
+startcoords = [200, 100]
+c = cv.ctx
+wid = 20
+hig = 20
+spacing = Math.ceil(30/Math.max(wid, hig))
+size = Math.ceil(300/Math.max(wid, hig))
+
+savedarray = []
+
+function setSavedArray(w, h) {
+for (let i=0; i<w; i++) {
+    arr = []
+    for (let j=0;j<h; j++) {
+        arr.push(0)
+    }
+    savedarray.push(arr)
+}
+}
+setSavedArray(10, 40)
+
+playingarray = []
+
+const tetrominos = [
+    //line piece
+    [ [[2, 0], [2, 1], [2, 2], [2, 3]], [[0, 2], [1, 2], [2, 2], [3, 2]] ],
+    //looks like:
+    //      0
+    //      0
+    //  1 1 # 1
+    //      0
+   
+    //square piece
+    [ [[0, 0], [0, 1], [1, 0], [1, 1]] ],
+    //looks like:
+    //    0 0
+    //    0 0
+
+    //skew right
+    [ [[1, 0], [1, 1], [2, 1], [2, 2]], [[0, 2], [1, 1], [2, 1], [1, 2]] ],
+    //looks like:
+    //      0
+    //      # #
+    //    1 1 0
+
+    //skew left
+    [ [[1, 0], [1, 1], [0, 1], [0, 2]], [[2, 2], [1, 1], [0, 1], [1, 2]] ],
+    //looks like:
+    //      0
+    //    # #
+    //    0 1 1
+
+    //T piece
+    [     [ [0, 1], [1, 1], [2, 1], [1, 2] ], [ [0, 1], [1, 1], [1, 2], [1, 0] ],
+    [ [0, 1], [1, 1], [2, 1], [1, 0] ], [ [1, 1], [2, 1], [1, 2], [1, 0] ],   ],
+    //looks like:
+    // (for this one the number indicates that it's there for all other rotations)
+    //      0
+    //    3 # 1
+    //      2
+
+    //L piece
+    [ [ [0, 1], [1, 1], [2, 1], [0, 2] ], [ [0, 0], [1, 0], [1, 1], [1, 2] ], [ [2, 0], [0, 1], [1, 1], [2, 1] ], [ [2, 2], [1, 0], [1, 1], [1, 2] ] ],
+    //looks like:
+    //    1 1 2
+    //    0 # 2
+    //    0 3 3
+
+    //Waluigi piece (yes that's what I'm calling it)
+    [ [ [0, 1], [1, 1], [2, 1], [0, 0] ], [ [2, 0], [1, 0], [1, 1], [1, 2] ], [ [2, 2], [0, 1], [1, 1], [2, 1] ], [ [0, 2], [1, 0], [1, 1], [1, 2] ] ],
+    //looks like:
+    //    0 1 1
+    //    0 # 2
+    //    3 3 2
+
+]
+//tetcolors = ["cyan", "yellow", "green", "red", "purple", "orange", "blue"]
+tetcolors = ["#243260", "#22DDFF", "#FFFF22", "#22FF22", "#FF2222", "#DD22BB", "#FFAA00", "#4040FF"]
+bagTemp = [0, 1, 2, 3, 4, 5, 6]
+bag = bagTemp.slice()
+piecepos = [4, 20]
+heldpiece = 0
+currentpiece = 0
+rotation = 0
+
+function newpiece(choice=0) {
+//piecepos = [4, 0];
+    if (bag.length==0) bag = bagTemp.slice()
+    bInd = Math.floor(Math.random()*bag.length)
+    selection = bag[bInd]
+    if (choice!=0) {selection = choice-1}
+    bag.splice(bInd, 1)
+    currentpiece = selection
+    //rotation = Math.floor(Math.random()*tetrominos[selection].length)
+    rotation = 0
+    m = tetrominos[selection][rotation]
+    n = m.map(row => row.slice())
+    n.forEach(function (item, index, arr) {n[index][0]+=piecepos[0]; n[index][1]+=piecepos[1]})
+    playingarray = playingarray.concat(n)
+}  
+
+function sendtosavedarray() {
+    holdtimer+=1
+    for (let i=0; i<4; i++) {
+        savedarray[playingarray[i][0]][playingarray[i][1]-1] = selection+1
+    }
+    playingarray = []
+    piecepos = [4, 15]
+    checklineclear(10, 40)
+    newpiece()
+}
+
+score = 0
+
+lPress = 0
+rPress = 0
+directionX = rPress-lPress
+softFalling = 0
+//queuedMove = directionX
+
+function updateplayingarray(falling, update) {
+    allowmove = true
+    allowfall = true
+    if (update) {
+    for (var i=0; i<4; i++) {
+        if (playingarray[i][0]+directionX>9 || playingarray[i][0]+directionX<0 ||  savedarray[playingarray[i][0]+directionX][playingarray[i][1]]!=0) allowmove = false
+if (playingarray[i][1]>=40 || savedarray[playingarray[i][0]][playingarray[i][1]+1]!=0) allowfall = false
+    }
+
+    if (allowmove) {
+        for (var i=0; i<4; i++) { playingarray[i][0]+=directionX}
+        piecepos[0]+=directionX
+    }
+    if (allowfall) {
+        for (var i=0; i<4; i++) { playingarray[i][1]+=softFalling}
+        piecepos[1]+=softFalling
+        if (softFalling!=0) score+=1
+    }
+}
+    if (falling || update) {
+    for (var i=0; i<4; i++) {
+        if (playingarray[i][1]>=40 || savedarray[playingarray[i][0]][playingarray[i][1]]!=0) {sendtosavedarray(); return}
+    }
+    }
+    if (falling) {
+    for (var i=0; i<4; i++) {
+        playingarray[i][1]+=1
+    }
+    piecepos[1]+=1
+    for (var i=0; i<4; i++) {
+        if (playingarray[i][1]>=40 || savedarray[playingarray[i][0]][playingarray[i][1]]!=0) {sendtosavedarray(); return}
+    }
+
+    }
+
+}
+
+
+function drawplayingpiece() {
+    playingarray.forEach(function (item, index, arr) {
+        c.fillStyle = tetcolors[selection+1]
+        c.fillRect(startcoords[0]+item[0]*(size+spacing), startcoords[1]+(item[1]-20)*(size+spacing), size, size)
+    })
+}
+
+function screen(w, h) {
+    for (i=0; i<w; i++) {
+        for (j=18; j<h; j++) {
+            c.fillStyle = tetcolors[savedarray[i][j]]
+           
+            c.fillRect(startcoords[0]+i*(size+spacing), startcoords[1]+(j-20)*(size+spacing), size, size)
+        }
+    }
+    c.fillStyle = "#FFF"
+    c.fillRect(startcoords[0], startcoords[1]-size-spacing*3, (size+spacing)*10, spacing*2)
+    drawplayingpiece()
+}
+
+function checklineclear(w, h) {
+    scorecounter = 0
+    for (j=h-1; j>=0; j--) {
+
+        lineclear = true
+        while (lineclear) {
+        for (i=0; i<w; i++) {
+            if (savedarray[i][j]==0) lineclear = false
+        }
+
+        if (lineclear) {
+            scorecounter+=1
+            for (i=0; i<w; i++) {
+                newarrayline = [0]
+                for (k=0; k<h; k++) {
+                if (k!=j) newarrayline.push(savedarray[i][k])
+                //savedarray[i].push(savedarray[i].slice(0, j-1).concat(savedarray[i].slice(j+1, h)))
+                //savedarray[i][j]=0
+                }
+                savedarray[i]=newarrayline.slice()
+            }    
+        }
+
+        }
+    }
+    if (scorecounter==1) score+=100
+    if (scorecounter==2) score+=300
+    if (scorecounter==3) score+=500
+    if (scorecounter==4) score+=1000
+}
+
+
+
+
+function rotatepiece() {
+disallowrotation = false;
+//alert(piecepos)
+rotation = (rotation+1)%(tetrominos[selection].length)
+        rotarray = [0,0,0,0]
+        for (let i = 0; i<4; i++) {
+        rotarray[i] = [piecepos[0]+tetrominos[selection][rotation][i][0], piecepos[1]+tetrominos[selection][rotation][i][1]]
+        }
+        for (let i = 0; i<4; i++) {
+        if (rotarray[i]>9 || rotarray[i]<0 || savedarray[rotarray[i][0]][rotarray[i][1]]!=0) disallowrotation = true;
+        }
+       
+        for (let i = 0; i<4; i++) {
+        playingarray[i]=rotarray[i].slice()
+        }
+       
+}
+
+
+
+
+//n = tetrominos[1][0].slice()
+//n.forEach(function (item, index, arr) {arr[index][0]+=1})
+//savedarray = savedarray.concat(n)
+
+
+function drawpiece(p) {
+    if (p!=0) {
+    for (let i=0; i<4; i++) {
+
+        for (let j=0; j<4; j++) {
+            c.fillStyle = tetcolors[0]
+            for (let k=0; k<4; k++) {
+            if (tetrominos[p-1][0][k][0]==i && tetrominos[p-1][0][k][1]==j) c.fillStyle = tetcolors[p]
+            }
+             
+           
+           
+            c.fillRect(50+i*(size+spacing), 50+j*(size+spacing), size, size)
+        }
+
+    }
+    }
+}
+
+
+
+newpiece()
+
+
+var t=0
+updatetimer = 0
+
+function gameloop() {
+recentlypressed = false
+
+    slowfallpressed = false
+    //document.getElementById("test").innerHTML=playingarray;
+    document.getElementById("test").innerHTML=`score: ${score}`
+    document.body.onkeydown  = function(e) {
+    if (e.keyCode == 38 || e.key == "w") {rotatepiece()}
+        if (e.keyCode == 37 || e.key == "a") {lPress = 1; recentlypressed=true; updatetimer = 0}
+        if (e.keyCode == 39 || e.key == "d") {rPress = 1; recentlypressed=true; updatetimer = 0}
+        if (e.keyCode == 40 || e.key == "s") {softFalling = 1; slowfallpressed = true; t =0}
+        if (e.key == "c" && holdtimer>0) {
+            holdtimer = 0
+console.log(selection)
+temp = heldpiece
+heldpiece = selection+1;
+  piecepos = [4, 15];
+playingarray = []
+if (temp==0) {newpiece();} else {newpiece(temp)}
+}
+        if (e.key == " ") {
+            
+        }
+    }
+   
+    document.body.onkeyup  = function(e) {
+        if (e.keyCode == 37 || e.key == "a") {lPress = 0}
+        if (e.keyCode == 39 || e.key == "d") {rPress = 0}
+if (e.keyCode == 40 || e.key == "s") {softFalling = 0}
+    }
+    directionX = rPress-lPress
+   
+
+    cv.clear()
+    updateplayingarray((t%(Math.max(4, Math.ceil(20-2*score/1000)))==0),(updatetimer%4==0 || recentlypressed))
+    checklineclear(10, 40)
+    screen(10, 40)
+    drawpiece(heldpiece)
+
+updatetimer+=1
+    t+=1
+    
+}      
+
+});
+
+        </script>
+        <noscript>
+            enable javascript for this lmao
+        </noscript>
+    </head>
+    <body>
+    <div id="test" style = "color:white; position:absolute; top:20px; left:600px;"></div>
+    </body>
+</html>
