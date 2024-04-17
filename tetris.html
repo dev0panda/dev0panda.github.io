@@ -140,12 +140,12 @@ piecepos = [4, 20]
 heldpiece = 0
 currentpiece = 0
 rotation = 0
+nextpiece = 1
 
 function newpiece(choice=0) {
 //piecepos = [4, 0];
-    if (bag.length==0) bag = bagTemp.slice()
-    bInd = Math.floor(Math.random()*bag.length)
-    selection = bag[bInd]
+    bInd = bag.indexOf(nextpiece);
+    selection = nextpiece
     if (choice!=0) {selection = choice-1}
     bag.splice(bInd, 1)
     currentpiece = selection
@@ -155,6 +155,8 @@ function newpiece(choice=0) {
     n = m.map(row => row.slice())
     n.forEach(function (item, index, arr) {n[index][0]+=piecepos[0]; n[index][1]+=piecepos[1]})
     playingarray = playingarray.concat(n)
+    determinenextpiece()
+    
 }  
 
 function sendtosavedarray() {
@@ -294,7 +296,7 @@ rotation = (rotation+1)%(tetrominos[selection].length)
 //savedarray = savedarray.concat(n)
 
 
-function drawpiece(p) {
+function drawpiece(p, position) {
     if (p!=0) {
     for (let i=0; i<4; i++) {
 
@@ -306,17 +308,21 @@ function drawpiece(p) {
              
            
            
-            c.fillRect(50+i*(size+spacing), 50+j*(size+spacing), size, size)
+            c.fillRect(position[0]+i*(size+spacing), position[1]+j*(size+spacing), size, size)
         }
 
     }
     }
 }
 
+function determinenextpiece() {
+if (bag.length==0) bag = bagTemp.slice()
+    nextpiece = bag[Math.floor(Math.random()*bag.length)]
+}
 
 
 newpiece()
-
+determinenextpiece()
 
 var t=0
 updatetimer = 0
@@ -358,8 +364,8 @@ if (e.keyCode == 40 || e.key == "s") {softFalling = 0}
     updateplayingarray((t%(Math.max(4, Math.ceil(20-2*score/1000)))==0),(updatetimer%4==0 || recentlypressed))
     checklineclear(10, 40)
     screen(10, 40)
-    drawpiece(heldpiece)
-
+    drawpiece(heldpiece, [50, 50])
+    drawpiece(nextpiece+1, [400, 50])
 updatetimer+=1
     t+=1
     
