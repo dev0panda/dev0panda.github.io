@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html>
-<body></body>
+<body>
+    <div class="slidecontainer " style = "top:140px; right: 20px; position:absolute;"><span id="numnodestext"># of nodes</span>
+        <input type="range" min="0" max="50" value="5" class="slider" id="numnodes">
+    </div>
+    <div class="slidecontainer " style = "top:160px; right: 20px; position:absolute;"><span id="ratetext">rate %: </span>
+        <input type="range" min="0" max="100" value="50" class="slider" id="rate">
+    </div>
+    <button style = "top:180px; right: 20px; position:absolute;" onclick = "regenerate()">regen</button>
+</body>
 
 <script src = "graphstuff.js"></script>
 </html>
