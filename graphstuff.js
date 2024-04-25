@@ -5,6 +5,9 @@ clickpos = [0,0]
 clicking = false
 selectedNode = 0
 center = [400, 400]
+numnodes = 50
+rate = 100-document.getElementById('rate').value
+currentgraph = 0
 
 document.onmousemove = function (e) {
   mousepos = [e.pageX, e.pageY]
@@ -15,7 +18,7 @@ document.onmousedown = function (e) {
   clicking = true
   clickpos = mousepos
 
-  selectedNode = nodeSelectOnClick(drawnGraphSet[0], mousepos)
+  selectedNode = nodeSelectOnClick(currentgraph, mousepos)
   if (selectedNode=="not close enough") clicking = false
 }
 document.onmouseup = function (e) {
@@ -97,12 +100,12 @@ function setDrawnGraph(graph, usePositions=false, positions=[]) {
     ePositions.push(new Line(vPositions[e[i][0]].position, vPositions[e[i][1]].position, e[i] ))
   }
   
-  drawnGraphSet.push({v:vPositions, e:ePositions})
+  drawnGraphSet[0]=({v:vPositions, e:ePositions})
 }; //converts any graph to a graph which can be drawn to the screen with randomly chosen node positions
 
-function drawLine(position1, position2, color="#BBB") {
+function drawLine(position1, position2, color="rgba(223, 223, 223, 0.6)"  ) {
   cv.ctx.strokeStyle = color;
-  cv.ctx.lineWidth = 2;
+  cv.ctx.lineWidth = 1;
   cv.ctx.beginPath();
   cv.ctx.moveTo(position1[0], position1[1]);
   cv.ctx.lineTo(position2[0], position2[1]);
@@ -114,8 +117,8 @@ function drawCircle(position, radius, color="#FFF") {
   cv.ctx.arc(position[0], position[1], radius, 0, 2 * Math.PI);
   cv.ctx.fillStyle = color;
   cv.ctx.fill();
-  cv.ctx.lineWidth = 2;
-  cv.ctx.strokeStyle = "#888";
+  cv.ctx.lineWidth = 3;
+  cv.ctx.strokeStyle = "#222";
   cv.ctx.stroke();
 } //draws a circle on the canvas
 
@@ -134,8 +137,8 @@ function createRandomGraph(n) {
   //use n as max number of vertices
   r = [n, []]
   for (let i = 0; i<n; i++) {
-    for (let j = 0; j<n; j++) {
-      if (Math.random()>0.93 && i!=j) r[1].push([i, j])
+    for (let j = 0; j<i; j++) {
+      if (Math.random()>rate*0.01 && i!=j) r[1].push([i, j])
     }
   }
   return r
@@ -171,13 +174,16 @@ function nodeSelectOnClick(graph, position) {
   return "not close enough"
 }
 
-
-rando = createRandomGraph(20)
-
-setDrawnGraph(rando)
+function regenerate() {
+  rando = createRandomGraph(numnodes)
+  
+  setDrawnGraph(rando)
+  currentgraph = drawnGraphSet[0]
+}
+regenerate()
 
 speeds = []
-for (let i=0; i<drawnGraphSet[0].v.length; i++) {
+for (let i=0; i<currentgraph.v.length; i++) {
     speeds.push([0,0])
 }
 
@@ -185,37 +191,47 @@ for (let i=0; i<drawnGraphSet[0].v.length; i++) {
 
 
 function drawloop() {
+
     cv.clear();
-    if (clicking) {updateNodePosition(selectedNode, drawnGraphSet[0], [mousepos[0]-drawnGraphSet[0].v[selectedNode].position[0],
-      mousepos[1]-drawnGraphSet[0].v[selectedNode].position[1]])
+    if (clicking) {updateNodePosition(selectedNode, currentgraph, [mousepos[0]-currentgraph.v[selectedNode].position[0],
+      mousepos[1]-currentgraph.v[selectedNode].position[1]])
     }
 
     for (let n=0; n<5; n++) {
-for( let i=0; i<drawnGraphSet[0].v.length; i++) {
+for( let i=0; i<currentgraph.v.length; i++) {
     ve = [0, 0]
-    for (let j=0; j<drawnGraphSet[0].v.length; j++) {
+    for (let j=0; j<currentgraph.v.length; j++) {
     if (i!=j) {
-    dx = drawnGraphSet[0].v[i].position[0]-drawnGraphSet[0].v[j].position[0]
-    dy = drawnGraphSet[0].v[i].position[1]-drawnGraphSet[0].v[j].position[1]
-    d = distance([drawnGraphSet[0].v[i].position[0], drawnGraphSet[0].v[i].position[1]],[drawnGraphSet[0].v[j].position[0],drawnGraphSet[0].v[j].position[1]])
+    dx = currentgraph.v[i].position[0]-currentgraph.v[j].position[0]
+    dy = currentgraph.v[i].position[1]-currentgraph.v[j].position[1]
+    d = distance([currentgraph.v[i].position[0], currentgraph.v[i].position[1]],[currentgraph.v[j].position[0],currentgraph.v[j].position[1]])
         
-ve = [ve[0]-100*(1-2*d)*dx/(d*d*d*d+0.5), ve[1]-100*(1-2*d)*dy/(d*d*d*d+0.5)]
+ve = [ve[0]-120*(1-2*d)*dx/(d*d*d*d+0.5), ve[1]-120*(1-2*d)*dy/(d*d*d*d+0.5)]
     
     }
     }
-    d = 100*distance([drawnGraphSet[0].v[i].position[0], drawnGraphSet[0].v[i].position[1]],center)
+    d = 100*distance([currentgraph.v[i].position[0], currentgraph.v[i].position[1]],center)
     ud = (d>2000)
 
-    speeds[i] = [speeds[i][0]+ve[0]-10*ud*(drawnGraphSet[0].v[i].position[0]-center[0]+0.01)/(d+0.01),
- speeds[i][1]+ve[1]-10*ud*(drawnGraphSet[0].v[i].position[1]-center[1]+0.01)/(d+0.01)]
-    speeds[i][0]*=0.9+0.11*Math.random()
-    speeds[i][1]*=0.9+0.11*Math.random()
+    speeds[i] = [speeds[i][0]+ve[0]-10*ud*(currentgraph.v[i].position[0]-center[0]+0.01)/(d+0.01),
+ speeds[i][1]+ve[1]-10*ud*(currentgraph.v[i].position[1]-center[1]+0.01)/(d+0.01)]
+    speeds[i][0]*=0.975
+    speeds[i][1]*=0.975
     
 }
 }
-    drawGraph(drawnGraphSet[0])
-    for (let i=0; i<drawnGraphSet[0].v.length ;i++) {
-    updateNodePosition(i, drawnGraphSet[0], speeds[i])
+    drawGraph(currentgraph)
+    for (let i=0; i<currentgraph.v.length ;i++) {
+    updateNodePosition(i, currentgraph, speeds[i])
     }
+
+
+
+    numnodes = parseInt(document.getElementById('numnodes').value)
+    currentgraph = drawnGraphSet[0]
+    rate = 100-0.01*Math.pow(document.getElementById('rate').value, 2)
+    document.getElementById('ratetext').innerText = "rate: " + (100-rate).toString().substring(0, 4) + "%"
+    document.getElementById('numnodestext').innerText = "# of nodes: " + numnodes
+  
 };
 
