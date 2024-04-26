@@ -1,4 +1,5 @@
 
+
 //needs a graph drawer, graph datatype, easy modification, and display of path taken
 mousepos = [0,0]
 clickpos = [0,0]
@@ -8,6 +9,7 @@ center = [400, 400]
 numnodes = 50
 rate = 100-document.getElementById('rate').value
 currentgraph = 0
+currentHightlightedNode = 0
 
 document.onmousemove = function (e) {
   mousepos = [e.pageX, e.pageY]
@@ -19,11 +21,16 @@ document.onmousedown = function (e) {
   clickpos = mousepos
 
   selectedNode = nodeSelectOnClick(currentgraph, mousepos)
-  if (selectedNode=="not close enough") clicking = false
+  if (selectedNode=="not close enough") {clicking = false} else {currentHightlightedNode = selectedNode}
 }
 document.onmouseup = function (e) {
   clicking = false
 }
+
+document.onkeydown = function (e) {
+  if (e.key == "n") shiftSelectionForward()
+}
+
 fps = 100;
 var cv = {
     canvas : document.createElement("canvas"),
@@ -89,8 +96,8 @@ function setDrawnGraph(graph, usePositions=false, positions=[]) {
     if (usePositions) {
       vPositions.push(new Node( [positions[i][0], positions[i][1]], i ))
     } else {
-      if (vPositions.length==0) { c = [center[0]+40-Math.random()*80, center[0]+40-Math.random()*80]}
-      else {c = [c[0]+120-Math.random()*240, c[1]+120-Math.random()*240]}
+      if (vPositions.length==0) { c = [center[0]+4-Math.random()*8, center[0]+4-Math.random()*8]}
+      else {c = [c[0]+20-Math.random()*40, c[1]+20-Math.random()*40]}
       vPositions.push(new Node( c, i ))
     }
   }
@@ -105,7 +112,7 @@ function setDrawnGraph(graph, usePositions=false, positions=[]) {
 
 function drawLine(position1, position2, color="rgba(223, 223, 223, 0.6)"  ) {
   cv.ctx.strokeStyle = color;
-  cv.ctx.lineWidth = 1;
+  cv.ctx.lineWidth = 1.5;
   cv.ctx.beginPath();
   cv.ctx.moveTo(position1[0], position1[1]);
   cv.ctx.lineTo(position2[0], position2[1]);
@@ -187,12 +194,28 @@ for (let i=0; i<currentgraph.v.length; i++) {
     speeds.push([0,0])
 }
 
+function highlightNode(graph, highlightednode) {
+  drawCircle(graph.v[highlightednode].position, 10, "#0F0")
+}
+function highlightEdge(graph, highlightededge) {
+  let i = graph.e[highlightededge]
+  drawLine(i.position1, i.position2, "#0F0")
+}
+
+
+
+
+
+function shiftSelectionForward() {
+  currentHightlightedNode=(currentHightlightedNode+1)%currentgraph.v.length
+}
 
 
 
 function drawloop() {
-
+  
     cv.clear();
+    
     if (clicking) {updateNodePosition(selectedNode, currentgraph, [mousepos[0]-currentgraph.v[selectedNode].position[0],
       mousepos[1]-currentgraph.v[selectedNode].position[1]])
     }
@@ -204,20 +227,24 @@ for( let i=0; i<currentgraph.v.length; i++) {
     if (i!=j) {
     dx = currentgraph.v[i].position[0]-currentgraph.v[j].position[0]
     dy = currentgraph.v[i].position[1]-currentgraph.v[j].position[1]
-    d = distance([currentgraph.v[i].position[0], currentgraph.v[i].position[1]],[currentgraph.v[j].position[0],currentgraph.v[j].position[1]])
+    d = distance([currentgraph.v[i].position[0], currentgraph.v[i].position[1]],[currentgraph.v[j].position[0],currentgraph.v[j].position[1]])*2
         
-ve = [ve[0]-120*(1-2*d)*dx/(d*d*d*d+0.5), ve[1]-120*(1-2*d)*dy/(d*d*d*d+0.5)]
+    if (d>10) ve = [ve[0]-120*(1-3*d)*dx/(d*d*d*d+1),
+                        ve[1]-120*(1-3*d)*dy/(d*d*d*d+1)]
+    if (d<5) ve = [0.5-Math.random(), 0.5-Math.random()]
     
-    }
+
+    
+      //if (Math.abs(ve[0])>1000) ve=[0,0]
     }
     d = 100*distance([currentgraph.v[i].position[0], currentgraph.v[i].position[1]],center)
-    ud = (d>2000)
+    ud = (d>0)
 
-    speeds[i] = [speeds[i][0]+ve[0]-10*ud*(currentgraph.v[i].position[0]-center[0]+0.01)/(d+0.01),
- speeds[i][1]+ve[1]-10*ud*(currentgraph.v[i].position[1]-center[1]+0.01)/(d+0.01)]
-    speeds[i][0]*=0.975
-    speeds[i][1]*=0.975
-    
+    speeds[i] = [speeds[i][0]+ve[0]-0.5*ud*(currentgraph.v[i].position[0]-center[0]+0.01)/(d+0.05),
+ speeds[i][1]+ve[1]-0.5*ud*(currentgraph.v[i].position[1]-center[1]+0.01)/(d+0.05)]
+    speeds[i][0]*=0.98
+    speeds[i][1]*=0.98
+  }
 }
 }
     drawGraph(currentgraph)
@@ -229,9 +256,14 @@ ve = [ve[0]-120*(1-2*d)*dx/(d*d*d*d+0.5), ve[1]-120*(1-2*d)*dy/(d*d*d*d+0.5)]
 
     numnodes = parseInt(document.getElementById('numnodes').value)
     currentgraph = drawnGraphSet[0]
+    
+    for (let n = 0; n<currentgraph.e.length; n++) {
+      if (currentgraph.e[n].indices.indexOf(currentHightlightedNode)!=-1) highlightEdge(currentgraph, n)
+      
+    }
+    highlightNode(currentgraph, currentHightlightedNode)
     rate = 100-0.01*Math.pow(document.getElementById('rate').value, 2)
     document.getElementById('ratetext').innerText = "rate: " + (100-rate).toString().substring(0, 4) + "%"
     document.getElementById('numnodestext').innerText = "# of nodes: " + numnodes
   
 };
-
