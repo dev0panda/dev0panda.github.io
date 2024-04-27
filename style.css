@@ -1,4 +1,21 @@
 body {
-  background-color: #204080
-  font-family: arial
+  background-color: #204080;
+  font-family: helvetica;
+  color: #FFFFFF;
+}
+
+a:link {
+  color: #80FFAA;
+}
+
+a:visited {
+  color: #2080AA;
+}
+
+a:hover {
+  color: #AAFFBB;
+}
+
+a:active {
+  color:#FF80FF;
 }
