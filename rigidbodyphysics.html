@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <body>
-    <button onclick = "addObjects()">add</button>
+    <button style="position: absolute; left: 250px; top:50px; background-color: red; width:100px;" onclick = "addObjects()">add</button>
 </body>
 <head>
 <style>
@@ -71,7 +71,7 @@ function normalizedVector(vector) {
 if (distance(vector, [0,0])==0) return [0,0]
 return [vector[0]/distance(vector, [0,0]), vector[1]/distance(vector, [0,0])]
 }
-g=9.8*0.01
+g=9.8*0.02
 
 
 class circleBody {
@@ -94,24 +94,25 @@ collide(object) {
 let directionVector = normalizedVector([object.position[0]-this.position[0], object.position[1]-this.position[1]])
 let temp = this.velocity
 let combinedSpeed = Math.sqrt(distance(temp, [0,0])*distance(temp, [0,0])+distance(object.velocity, [0,0])*distance(object.velocity, [0,0]))
+let ratio = 1- this.radius/(this.radius+object.radius)
 
-this.velocity=[-directionVector[0]*combinedSpeed/2, -directionVector[1]*combinedSpeed/2]
-object.velocity=[directionVector[0]*combinedSpeed/2, directionVector[1]*combinedSpeed/2]
+this.velocity=[this.velocity[0]*0.95*ratio-directionVector[0]*combinedSpeed*ratio, this.velocity[1]*0.95-directionVector[1]*combinedSpeed*ratio]
+object.velocity=[object.velocity[0]*0.95+directionVector[0]*combinedSpeed*(1-ratio), object.velocity[1]*0.95+directionVector[1]*combinedSpeed*(1-ratio)]
 object.position[0]-=(directionVector[0]*(distance(object.position, this.position)-this.radius-object.radius))/2
 this.position[0]+=(directionVector[0]*(distance(object.position, this.position)-this.radius-object.radius))/2
 object.position[1]-=(directionVector[1]*(distance(object.position, this.position)-this.radius-object.radius))/2
 this.position[1]+=(directionVector[1]*(distance(object.position, this.position)-this.radius-object.radius))/2
 }
 update(level=1) {
-//if (level==1) this.velocity = [this.velocity[0]*0.99,this.velocity[1]*0.99]
+this.velocity = [this.velocity[0]*(1-0.01*level*level),this.velocity[1]*(1-0.01*level*level)]
 
 this.position[0]+=this.velocity[0]*level
 this.position[1]+=this.velocity[1]*level
-if (Math.abs(this.velocity[0])<0.05) this.velocity[0] = 0
-if (Math.abs(this.velocity[1])<0.05) this.velocity[1] = 0
-if (this.position[0]<this.radius) {this.position[0]=this.radius; this.velocity[0]=-this.velocity[0]*0.9}
-if (this.position[0]>800-this.radius) {this.position[0]=800-this.radius; this.velocity[0]=-this.velocity[0]*0.9}
-if (this.position[1]>800-this.radius) {this.position[1]=800-this.radius; this.velocity[1]=-this.velocity[1]*0.9}
+if (Math.abs(this.velocity[0])<0.01) this.velocity[0] = 0
+if (Math.abs(this.velocity[1])<0.01) this.velocity[1] = 0
+if (this.position[0]<this.radius) {this.position[0]=this.radius; this.velocity[0]=-this.velocity[0]*0.8}
+if (this.position[0]>800-this.radius) {this.position[0]=800-this.radius; this.velocity[0]=-this.velocity[0]*0.8}
+if (this.position[1]>800-this.radius) {this.position[1]=800-this.radius; this.velocity[1]=-this.velocity[1]*0.8 }
 
 }
 }
@@ -122,13 +123,14 @@ t=0
 function gameloop() {
 cv.clear()
 for (let i=0; i<rigidbodies.length; i++) {
+    rigidbodies[i].update(1/rigidbodies.length)
 for (let j=i+1; j<rigidbodies.length; j++) {
 if (rigidbodies[i].circleCollisionDetection(rigidbodies[j]) && i!=j) {
 rigidbodies[i].collide(rigidbodies[j])
 //console.log("hit!")
 }
 }
-rigidbodies[i].update(1/rigidbodies.length)
+
 }
 for (let i=0; i<rigidbodies.length; i++) {
 if (rigidbodies[i].position[1]<800-rigidbodies[i].radius) rigidbodies[i].velocity[1]+=g
@@ -137,9 +139,10 @@ rigidbodies[i].draw()
 }
 
 }
-function addObjects(size = 30, speed=25, n=20) {
-  for (let i=0; i<2; i++) {
-    rigidbodies.push(new circleBody(size*Math.random(), [10+size*2.2*i, 100+100*Math.random()], [speed*(0.5-Math.random())+speed, speed*(0.5-Math.random())], "rgb(" + Math.random()*255+ ", " + Math.random()*255+ ", " + Math.random()*255+ ")" ))
+function addObjects(size = 50, speed=25, n=5) {
+  for (let i=0; i<n; i++) {
+    r = size*Math.random()
+    rigidbodies.push(new circleBody(r, [10+size*2.2*i, 100+100*Math.random()], [speed*(0.5-Math.random())+speed, speed*(0.5-Math.random())], "rgb(" + (0.5+0.5*Math.random())*255/(1+0.1*r)+ ", " + (0.5+0.5*Math.random())*255/(1+0.05*r)+ ", " + (0.5+0.5*Math.random())*255/(1+0.03*r)+ ")" ))
 }
 }
 //document.body.onmousemove = function (e) {
@@ -151,4 +154,4 @@ enable javascript for this lmao
 </noscript>
 </head>
 
-</html>de
+</html>
