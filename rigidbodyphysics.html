@@ -2,7 +2,11 @@
 <!DOCTYPE html>
 <html>
 <body>
-    <button style="position: absolute; left: 250px; top:50px; background-color: red; width:100px;" onclick = "addObjects()">add</button>
+    <button style="position: absolute; left: 200px; top:50px; background-color: red; width:100px; height:50px; color: cyan" onclick = "addObjects()">add</button>
+    <button style="position: absolute; left: 200px; top:150px; background-color: blue; width:100px; height:50px; color: orange;" onclick = "tinify()">tinify</button>
+    <button style="position: absolute; left: 200px; top:250px; background-color: green; width:100px; height:50px; color: white;" onclick = "bigify()">bigify</button>
+    <button style="position: absolute; left: 200px; top:350px; background-color: purple; width:100px; height:50px; color: white;" onclick = "mixup()">mix it up</button>
+    <button style="position: absolute; left: 200px; top:450px; background-color: white; width:100px; height:50px; color: cyan;" onclick = "rigidbodies = []">Clear</button>
 </body>
 <head>
 <style>
@@ -72,7 +76,8 @@ if (distance(vector, [0,0])==0) return [0,0]
 return [vector[0]/distance(vector, [0,0]), vector[1]/distance(vector, [0,0])]
 }
 g=9.8*0.02
-
+let clicking = false
+let mousepos = [0, 0]
 
 class circleBody {
 constructor(radius, position, velocity, color="#FF0000") {
@@ -138,6 +143,7 @@ rigidbodies[i].update()
 rigidbodies[i].draw()
 }
 
+if (clicking) evade(mousepos)
 }
 function addObjects(size = 50, speed=25, n=5) {
   for (let i=0; i<n; i++) {
@@ -145,6 +151,41 @@ function addObjects(size = 50, speed=25, n=5) {
     rigidbodies.push(new circleBody(r, [10+size*2.2*i, 100+100*Math.random()], [speed*(0.5-Math.random())+speed, speed*(0.5-Math.random())], "rgb(" + (0.5+0.5*Math.random())*255/(1+0.1*r)+ ", " + (0.5+0.5*Math.random())*255/(1+0.05*r)+ ", " + (0.5+0.5*Math.random())*255/(1+0.03*r)+ ")" ))
 }
 }
+
+function bigify() {
+    for (let i=0; i<rigidbodies.length; i++) rigidbodies[i].radius*=1.25+0.1*Math.random()
+}
+
+function tinify() {
+    for (let i=0; i<rigidbodies.length; i++) rigidbodies[i].radius*=0.65-0.2*Math.random()
+}
+
+function mixup() {
+    for (let i=0; i<rigidbodies.length; i++) {rigidbodies[i].velocity[0]*=5-6*Math.random(); rigidbodies[i].velocity[1]-=5}
+}
+
+function evade(location) {
+    for (let i=0; i<rigidbodies.length; i++) {
+        d = distance(rigidbodies[i].position, location)
+        if (d<50) {
+        nV = [(rigidbodies[i].position[0]-location[0])/d,(rigidbodies[i].position[1]-location[1])/d]
+        rigidbodies[i].velocity[0]+=0.2*rigidbodies[i].radius*nV.slice()[0]
+        rigidbodies[i].velocity[1]+=0.2*rigidbodies[i].radius*nV.slice()[1]
+        }
+    }
+}
+document.onmousedown = function(e) {
+    mousepos = [e.pageX-200, e.pageY]
+    clicking = true
+}
+document.onmousemove = function(e) {
+    mousepos = [e.pageX-200, e.pageY]
+}
+document.onmouseup = function(e) {
+    mousepos = [e.pageX-200, e.pageY]
+    clicking = false
+}
+
 //document.body.onmousemove = function (e) {
  //   rigidbodies.push(new circleBody(10, [e.pageX-200, e.pageY], [4*(0.5-Math.random()), 4*(0.5-Math.random())], "rgb(" + Math.random()*255+ ", " + Math.random()*255+ ", " + Math.random()*255+ ")" ))
 //}
