@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html>
+
+    <body>
+        <p id="label"></p>
+    </body>
+
+    <script>
+scale = 5
+    GAMESCREEN = {
+        canvas: document.createElement('canvas'),
+        start: function () {
+            this.canvas.width = 100*scale;
+            this.canvas.height = 100*scale;
+            this.ctx = this.canvas.getContext('2d');
+            document.body.appendChild(this.canvas);
+            this.interval = setInterval(gameloop, 10);
+        },
+        clear: function () {
+            this.canvas.width = 100*scale;
+            this.canvas.height = 100*scale;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = "#101010";
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+    GAMESCREEN.start()
+
+    //figure out how to draw a laser
+
+    function returnRGBA(c, a) {
+        return `rgba(${c[0]},${c[1]},${c[2]},${a})`
+    }
+    dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
+
+    function drawCircle(x, y, r, col) {
+        tx = GAMESCREEN.ctx
+        tx.beginPath();
+        tx.arc(x, y, r, 0, 2 * Math.PI);
+        tx.fillStyle = col
+        tx.fill();
+    }
+    function drawRectangle(x, y, width, height, color) {
+        context = GAMESCREEN.ctx
+        context.beginPath();
+        context.rect(x, y, width, height);
+        context.fillStyle = color;
+        context.fill();
+    }
+    function drawLine(position1, position2, color="rgba(223, 223, 223, 0.6)"  ) {
+        cv = GAMESCREEN
+  cv.ctx.strokeStyle = color;
+  cv.ctx.lineWidth = 1.5;
+  cv.ctx.beginPath();
+  cv.ctx.moveTo(position1[0], position1[1]);
+  cv.ctx.lineTo(position2[0], position2[1]);
+  cv.ctx.stroke();
+};
+    function distance(p1, p2) {
+        return Math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
+    }
+    function normalize(v) {
+        d = (distance(v, [0,0]) == 0) ? 1 : distance(v, [0,0])
+        return [v[0]/d, v[1]/d]
+    }
+
+    function lineCircle( x1,  y1,  x2,  y2,  cx,  cy,  r) {
+
+        // is either end INSIDE the circle?
+        // if so, return true immediately
+        let inside1 = pointCircle(x1,y1, cx,cy,r);
+        let  inside2 = pointCircle(x2,y2, cx,cy,r);
+        if (inside1 || inside2) return true;
+
+        // get length of the line
+        let distX = x1 - x2;
+        let distY = y1 - y2;
+        let len = Math.sqrt( (distX*distX) + (distY*distY) );
+
+        // get dot product of the line and circle
+        let dot = ( ((cx-x1)*(x2-x1)) + ((cy-y1)*(y2-y1)) ) / Math.pow(len,2);
+
+        // find the closest point on the line
+        let closestX = x1 + (dot * (x2-x1));
+        let closestY = y1 + (dot * (y2-y1));
+
+        // is this point actually on the line segment?
+        // if so keep going, but if not, return false
+        let onSegment = linePoint(x1,y1,x2,y2, closestX,closestY);
+        if (!onSegment) { return false}//drawCircle(closestX, closestY, 2, "#FF0"); return false; }
+
+
+        // get distance to closest point
+        distX = closestX - cx;
+        distY = closestY - cy;
+        let distance = Math.sqrt( (distX*distX) + (distY*distY) );
+
+        if (distance <= r) {
+        return true;
+        }
+        return false;
+        }
+
+
+// POINT/CIRCLE
+function pointCircle( px,  py,  cx,  cy,  r) {
+
+// get distance between the point and circle's center
+// using the Pythagorean Theorem
+let distX = px - cx;
+let distY = py - cy;
+let distance = Math.sqrt( (distX*distX) + (distY*distY) );
+
+// if the distance is less than the circle's
+// radius the point is inside!
+if (distance <= r) {
+  return true;
+}
+return false;
+}
+
+function linePoint( x1,  y1,  x2,  y2,  px,  py) {
+
+        // get distance from the point to the two ends of the line
+        let d1 = distance([px,py], [x1,y1]);
+        let d2 = distance([px,py], [x2,y2]);
+
+        // get the length of the line
+        let lineLen = distance([x1,y1], [x2,y2]);
+
+        // since floats are so minutely accurate, add
+        // a little buffer zone that will give collision
+        let buffer = 0.2;    // higher # = less accurate
+
+        // if the two distances are equal to the line's
+        // length, the point is on the line!
+        // note we use the buffer here to give a range,
+        // rather than one #
+        if (d1+d2 >= lineLen-buffer && d1+d2 <= lineLen+buffer) {
+        return true;
+        }
+return false;
+}
+
+
+mirrors =[]
+
+    class laser  {
+        constructor (x= 50, y= 100, velX=6, velY=6, color = [255, 0, 0]) {
+        this.x=x,
+        this.y=y,
+        this.velX=velX,
+        this.velY=velY,
+        this.previouspositions= [],
+        this.drawColor=color,
+        this.update= function () {
+            this.drawColor= [255, 0, 0]
+            let a = 3
+            for (let i=0; i<a; i++) {
+                this.x+=this.velX/a
+                this.y+=this.velY/a
+                this.collide()
+            }
+
+
+
+            this.previouspositions.push([this.x, this.y])
+            if (this.previouspositions.length>=450) {this.previouspositions.shift()}
+        },
+        this.bounceX= function () {
+            this.velX=-this.velX    
+            this.x+=this.velX
+        },
+        this.bounceY= function () {
+            this.velY=-this.velY
+            this.y+=this.velY
+        },
+        this.collide= function () {
+            if (this.x<5) this.bounceX()
+            if (this.x>GAMESCREEN.canvas.width-5) this.bounceX()
+            if (this.y<5) this.bounceY()
+            if (this.y>GAMESCREEN.canvas.height-5) this.bounceY()
+
+            for (let i=0; i<mirrors.length; i++) {
+                if (lineCircle(mirrors[i].x-mirrors[i].length*0.5*Math.cos(mirrors[i].angle),
+                 mirrors[i].y-mirrors[i].length*0.5*Math.sin(mirrors[i].angle),
+                 mirrors[i].x+mirrors[i].length*0.5*Math.cos(mirrors[i].angle),
+                 mirrors[i].y+mirrors[i].length*0.5*Math.sin(mirrors[i].angle),
+                 this.x, this.y, 1)) {
+                  drawLine([mirrors[i].x-mirrors[i].length*0.5*Math.cos(mirrors[i].angle),
+                   mirrors[i].y-mirrors[i].length*0.5*Math.sin(mirrors[i].angle)],
+                   [mirrors[i].x+mirrors[i].length*0.5*Math.cos(mirrors[i].angle),
+                   mirrors[i].y+mirrors[i].length*0.5*Math.sin(mirrors[i].angle)], "#FF0")
+                   this.drawColor = [0,255,255]
+
+
+
+                    //I KNOW this works to give the proper degree (if it doesn't I'm burning a building down)
+                   let thetaV = Math.atan2(this.velY, this.velX)
+                    let thetaM = mirrors[i].angle+3.14
+                    thetaV -= 3.14
+                    let thetaN = thetaM - 3.14*0.5
+                    let thetaNew = 2*thetaN-thetaV
+                    let speed = distance([this.velX, this.velY], [0,0])
+                    this.velX = speed*Math.cos(thetaNew)
+                    this.velY = speed*Math.sin(thetaNew)
+
+              }
+
+            }
+        },
+        this.draw= function () {
+            let p = this.previouspositions
+            for (let i=0 ; i<p.length; i++) {
+                drawCircle(p[i][0], p[i][1], 5, returnRGBA(this.drawColor, Math.pow(i/p.length, 2)));
+            }
+            
+        }
+        }   
+    }
+    
+    class mirror {
+        constructor (x, y, length, angle, color) {
+            this.x = x
+            this.y = y
+            this.length = length
+            this.angle = angle
+            this.color = color
+            this.draw = function () {
+                GAMESCREEN.ctx.rotate(this.angle)
+                drawRectangle(this.x*Math.cos(this.angle)+this.y*Math.sin(this.angle)-length*0.5, -this.x*Math.sin(this.angle)+this.y*Math.cos(this.angle), this.length, 4, this.color)
+                GAMESCREEN.ctx.rotate(-this.angle)
+            }
+            mirrors.push(this)
+        }
+
+    }
+
+
+    l = new laser(200, 300, 6, 1, [255, 0, 0])
+    //m = new mirror(100, 100, 30, 0, "#808080")
+    for (let i=0; i<10; i++) {
+        for (let j=0; j<10; j++) {
+            new mirror(50+50*i, 50+50*j, 30, 0.1*(i+j), "#808080")
+        }
+    }
+
+//mangle = 0.1
+document.onclick = function (e) {new mirror (e.pageX, e.pageY, 30, 2*3.14*Math.random(), "#808080")}
+    t=0
+    function gameloop() {
+        GAMESCREEN.clear()
+        for (let i=0; i<10; i++) {l.update()}
+        l.draw()
+        
+        
+        for (let i=0; i<mirrors.length; i++) {
+            mirrors[i].draw()
+            drawLine([mirrors[i].x-mirrors[i].length*0.5*Math.cos(mirrors[i].angle),
+                 mirrors[i].y-mirrors[i].length*0.5*Math.sin(mirrors[i].angle)],
+                [mirrors[i].x+mirrors[i].length*0.5*Math.cos(mirrors[i].angle),
+                mirrors[i].y+mirrors[i].length*0.5*Math.sin(mirrors[i].angle)], "#08F")
+                mirrors[i].angle+=0.05
+        }
+        //m.angle+=0.01
+        t+=1
+    }
+    </script>
+
+</html>
