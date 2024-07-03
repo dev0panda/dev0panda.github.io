@@ -9,6 +9,9 @@
     </head>
     <body>
 
+        <button onclick = 'fast()' style = "position: absolute; right: 20px;width: 180px; height: 50px; font-size:25px;">single color (fast)</button>
+        <button onclick = 'slow()' style = "position: absolute; top: 60px; right: 20px;width: 80px; height: 50px; font-size:25px;">slow</button>
+
     </body>
 <script src = "myLibrary.js"></script>
 <script>
@@ -62,7 +65,15 @@ gl_Position = vec4(vertPosition, 0.0, 1.0);
 
 //reminders:
 //gl_FragCoord is current coordinate
-var fragmentShaderText = `
+function slow() {
+    fragmentShaderText = slowText
+    main()
+}
+function fast() {
+    fragmentShaderText = fastText
+    main()
+}
+fastText = `
 precision mediump float;
 varying vec3 fragColor;
 uniform float time;
@@ -97,6 +108,70 @@ void main() {
 `
 
 
+slowText =  `
+precision highp float;
+varying vec3 fragColor;
+uniform float time;
+uniform vec2 centerPos;
+uniform float scale;
+
+float sig(float x) {
+    return 1./(1.+exp(-x));
+}
+
+vec3 colorFromValue(float v) {
+    return vec3 (
+        0.5+0.5+cos(v+2.),
+        0.5+0.5*cos(v),
+        0.5+0.5*cos(v+4.)
+    );
+}
+
+void main() {
+    vec2 uv = 0.5*(gl_FragCoord.xy+1.)/1000.;
+    vec2 centerPos = 0.5*(centerPos)/1000.;
+    centerPos.xy-=0.25;
+    centerPos.y=-centerPos.y;
+
+    uv.x-=0.5;
+    uv.y-=0.25;
+    uv*=scale;
+
+    uv-=centerPos;
+
+    vec3 col = vec3 (0.,0.,0.);
+    vec2 z = vec2 (0.,0.);
+    int i2 = 0;
+    float zn = 0.;
+    float d = 0.;
+    for (int n = 0; n<3; n++) {
+    uv.x+=0.0001*scale;
+    z = vec2(0.,0.);
+    zn = 0.;
+    i2 = 0;
+
+    for (int i=0; i<100; i++) {
+        z = vec2(z[0]*z[0]-z[1]*z[1], 2.*z[0]*z[1])+uv;
+        if (distance(z, vec2(0,0))>10000.) {
+            if (zn == 0.) zn = float(i);
+            z-=uv*0.95;
+        }
+        if (distance(z, vec2(0,0))>1000000.) {
+            zn += 0.25*(float(i)-zn);
+            break;
+        }
+        i2++;
+        //if (i2>int(time*10.)) break;
+    }
+    d = distance(z, vec2(0,0));
+    col += d > 10000. ? 0.15*colorFromValue(zn) : colorFromValue(d);
+    //if (d>10.) col.z+=cos(zn);
+    }
+    gl_FragColor = vec4(col, 1.0);
+}
+`
+
+var fragmentShaderText = slowText
 
 
 document.onmousedown = document.onmousemove = document.onmouseup = function (e) {
