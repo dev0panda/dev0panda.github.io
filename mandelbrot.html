@@ -8,9 +8,11 @@
         </style>
     </head>
     <body>
-
-        <button onclick = 'fast()' style = "position: absolute; right: 20px;width: 180px; height: 50px; font-size:25px;">single color (fast)</button>
-        <button onclick = 'slow()' style = "position: absolute; top: 60px; right: 20px;width: 80px; height: 50px; font-size:25px;">slow</button>
+    
+        <button onclick = 'fast()' style = "position: absolute; bottom: 20px; right: 20px;width: 180px; height: 50px; font-size:25px;">single color (fast)</button>
+        <button onclick = 'slow()' style = "position: absolute; bottom: 80px; right: 20px;width: 80px; height: 50px; font-size:25px;">slow</button>
+        <button onclick = 'zoom(1, 4)' style = "position: absolute; bottom: 20px; right: 180px;width: 80px; height: 50px; font-size:25px;">zoom in</button>
+        <button onclick = 'zoom(-1, 4)' style = "position: absolute; bottom: 80px; right: 180px;width: 80px; height: 50px; font-size:25px;">zoom out</button>
 
     </body>
 <script src = "myLibrary.js"></script>
@@ -190,11 +192,16 @@ document.onmousemove = function (e) {
     }
     mousePos = [e.pageX, e.pageY]
 }
+function zoom(d, n=1) {
+    for (let i=0; i<n; i++) {
+        scale *= (d<1) ? 1.2 : 1/1.2
+    cpos[0]-= ((d<1) ? (1.2-1)/1 : (1/1.2-1) ) *(mousePos[0]-cpos[0])
+    cpos[1]-=((d<1) ? (1.2-1)/1 : (1/1.2-1) ) *(mousePos[1]-cpos[1])
+    }
+}
 document.onwheel = function (e) {
-    scale *= (e.deltaY<1) ? 1.2 : 1/1.2
-    cpos[0]-= ((e.deltaY<1) ? (1.2-1)/1 : (1/1.2-1) ) *(mousePos[0]-cpos[0])
-    cpos[1]-=((e.deltaY<1) ? (1.2-1)/1 : (1/1.2-1) ) *(mousePos[1]-cpos[1])
 
+zoom(e.deltaY)
 
     //cpos[0]-=mousePos[0]*scale+cpos[0]-start[0]
     //cpos[1]-=mousePos[1]*scale+cpos[1]-start[1]
