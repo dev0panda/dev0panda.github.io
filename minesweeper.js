@@ -286,6 +286,7 @@ function restoreGame() {
     drawingBombs = false
     won = false
     win_t=100
+    t=0
 }
 
 function startSmallGame() {
@@ -303,7 +304,7 @@ function startMediumGame() {
 }
 
 function startLargeGame() {
-    start = [20, 20]
+    start = [0, 20]
     minesweeperDimensions = [20, 20]
     numBombs = 80
     restoreGame()
@@ -359,6 +360,15 @@ if (won && win_t>0) {
     if (t%50>20) {winAnimation()}
     else {win_t-=1}
 }
+
+ctx.fillStyle = "#FFF"
+ctx.font="40px Calibri";
+ctx.fillText(Math.floor(t/180), 440, 100)
+
+ctx.fillStyle = "#FFF"
+ctx.font="40px Calibri";
+ctx.fillText(numBombs-flags.length, 440, 200)
+
 
 t+=1
 requestAnimationFrame(loop)
