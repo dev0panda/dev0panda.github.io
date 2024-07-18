@@ -11,22 +11,27 @@ ctx.fillStyle = "#121212"
 ctx.fillRect(0, 0, canvas.width, canvas.height)
 }
 
-const minesweeperDimensions = [10, 10]
+let minesweeperDimensions = [10, 10]
 const size = 20
 const spacing = 2
-const start = [100,100]
+let start = [100,100]
 let drawingBombs = false
 //just as a note, it would be better to have the start, spacing, size, etc. variables be defined here for all functions rather than for each function. oh well.
 
+function distance(a, b) {
+    return Math.sqrt((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1]))
+}
 
 
 clicking = false
 alreadyclicked = false
 lost = false
+won = false
 mousepos = [0,0]
 pressingLocation = [-100,-100]
 numBombs = 15
 flags = []
+questionMarks = []
 
 document.onmousedown = function (e) {
     pressingLocation = [-100, -100]
@@ -39,7 +44,7 @@ document.onmousedown = function (e) {
 }
 document.onmouseup = function (e) {
     clicking = false
-    if (e.button==0) {
+    if (e.button==0 && distance(mousepos, pressingLocation)<size*2.5) {
     let updating = true
     let ind = getMinesweeperIndices(pressingLocation)
     for (let i = 0; i<flags.length ;i++) {
@@ -51,11 +56,16 @@ document.onmouseup = function (e) {
     if (e.button==2) {
         ind = getMinesweeperIndices(pressingLocation)
         if (minesweeperGrid[ind[0]][ind[1]]!=2) {
-        let removed = false
+        let foundInFlags = false
+        let foundInQ = false
         for (let i=0; i<flags.length; i++) {
-            if (flags[i].x==ind[0] && flags[i].y==ind[1]) {flags.splice(i, 1); removed = true}
+            if (flags[i].x==ind[0] && flags[i].y==ind[1]) {flags.splice(i, 1); foundInFlags = true}
         }
-        if (!removed) flags.push({"x": ind[0], "y": ind[1]})
+        for (let i=0; i<questionMarks.length; i++) {
+            if (questionMarks[i].x==ind[0] && questionMarks[i].y==ind[1]) {questionMarks.splice(i, 1); foundInQ = true}
+        }
+        if (!foundInFlags && !foundInQ) flags.push({"x": ind[0], "y": ind[1]})
+        if (foundInFlags && !foundInQ) {questionMarks.push({"x": ind[0], "y": ind[1]})}
         }
     }
     pressingLocation = [-100, -100]
@@ -118,6 +128,7 @@ function updateMinesweeperGrid(indices, grid=minesweeperGrid, initial=true) {
     }
     }
     alreadyclicked = true
+    if (checkWin()) won = true
 }
 function getNearbyBombs(indices) {
     count = 0
@@ -157,7 +168,8 @@ function drawMinesweeperGrid(dimensions=minesweeperDimensions) {
 }
 
 function getMinesweeperIndices(position) {
-    return [Math.floor((position[0]-start[0]-4)/22),Math.floor((position[1]-start[1]-4)/22)]
+    a = [Math.floor((position[0]-start[0]-8)/22),Math.floor((position[1]-start[1]-8)/22)]
+    if (a[0]>=0 && a[0]<minesweeperDimensions[0] && a[1]>=0 && a[1]<minesweeperDimensions[1]) {return a} else {return [-100, -100]}
 }
 
 function drawOutwardTile(start, size, spacing, j, i) {
@@ -198,6 +210,13 @@ function drawFlag(start, size, spacing, j, i) {
     ctx.fill()
 }
 
+function drawQuestionMark(j, i) {
+    ctx.fillStyle = "#000"
+    ctx.globalAlpha = 1
+    ctx.font = "20px Arial"
+    ctx.fillText("?", start[0]+j*(size+spacing)+0.2*size, start[1]+i*(size+spacing)+size*0.9)
+}
+
 function drawPressedTile(start, size, spacing, j, i) {
     ctx.fillStyle="#444"
     ctx.fillRect(start[0]+j*(size+spacing), start[1]+i*(size+spacing), size, size)
@@ -209,10 +228,17 @@ function drawPressedTile(start, size, spacing, j, i) {
     ctx.fillRect(start[0]+j*(size+spacing)+2, start[1]+i*(size+spacing)+size-2, size-2, 2)
 }
 
+function drawHighlightedTile(j, i) {
+    ctx.globalAlpha = 0.8
+    ctx.fillStyle="#FFF"
+    ctx.fillRect(start[0]+j*(size+spacing), start[1]+i*(size+spacing), size, size)
+    ctx.globalAlpha = 1
+}
+
 function drawClearedTile(start, size, spacing, j, i) {
     ctx.fillStyle="#444"
     ctx.fillRect(start[0]+j*(size+spacing)-2, start[1]+i*(size+spacing)-2, size+4, size+4)
-    ctx.fillStyle="#AAA"
+    ctx.fillStyle="#888"
     ctx.fillRect(start[0]+j*(size+spacing)+1, start[1]+i*(size+spacing)+1, size-2, size-2)
 }
 
@@ -258,23 +284,82 @@ function restoreGame() {
     flags = []
     numberDisplay = []
     drawingBombs = false
+    won = false
+    win_t=100
 }
 
+function startSmallGame() {
+    start = [100, 100]
+    minesweeperDimensions = [10, 10]
+    numBombs = 15
+    restoreGame()
+}
+
+function startMediumGame() {
+    start = [50, 50]
+    minesweeperDimensions = [15, 15]
+    numBombs = 40
+    restoreGame()
+}
+
+function startLargeGame() {
+    start = [20, 20]
+    minesweeperDimensions = [20, 20]
+    numBombs = 80
+    restoreGame()
+}
+
+function checkWin() {
+    for (let i=0; i<minesweeperGrid.length ;i++) {
+        for (let j = 0; j<minesweeperGrid[i].length; j++) {
+            if (minesweeperGrid[i][j]==0) return false 
+        }
+    }
+    return true
+}
+
+function winAnimation() {
+    ctx.globalAlpha = 0.6
+    for (let i=0; i<canvas.width; i+=20) {
+        for (let j=0; j<canvas.height; j+=20) {
+            ctx.fillStyle = `rgb(${Math.random()*255}, ${255}, ${Math.random()*255})`
+            ctx.fillRect(i, j, 20, 20)
+        }
+    }
+    ctx.globalAlpha = 1
+}
+
+let t = 0
+let win_t = 100
 requestAnimationFrame(loop)
 
 function loop() {
 clear() 
 
-if (lost) drawingBombs = true
 
 drawMinesweeperGrid()
 
-drawPressedTile(start, 20, 2, getMinesweeperIndices(pressingLocation)[0],getMinesweeperIndices(pressingLocation)[1])
+if (clicking) {
+    drawPressedTile(start, 20, 2, getMinesweeperIndices(pressingLocation)[0],getMinesweeperIndices(pressingLocation)[1])
+} else {
+    drawHighlightedTile(getMinesweeperIndices(mousepos)[0],getMinesweeperIndices(mousepos)[1])
+}
 drawNumbers()
 
 for (let i = 0; i<flags.length ;i++) {
     drawFlag(start, size, spacing, flags[i].x, flags[i].y)
 }
+for (let i = 0; i<questionMarks.length ;i++) {
+    drawQuestionMark(questionMarks[i].x, questionMarks[i].y)
+    if (minesweeperGrid[questionMarks[i].x][questionMarks[i].y]==2) questionMarks.splice(i, 1)
+}
 
+if (lost) drawingBombs = true
+if (won && win_t>0) {
+    if (t%50>20) {winAnimation()}
+    else {win_t-=1}
+}
+
+t+=1
 requestAnimationFrame(loop)
 }
