@@ -357,8 +357,8 @@ for (let i = 0; i<questionMarks.length ;i++) {
 
 if (lost) drawingBombs = true
 if (won && win_t>0) {
-    if (t%50>20) {winAnimation()}
-    else {win_t-=1}
+    if (win_t%50>20) {winAnimation()}
+    win_t-=1
 }
 
 ctx.fillStyle = "#FFF"
@@ -370,6 +370,6 @@ ctx.font="40px Calibri";
 ctx.fillText(numBombs-flags.length, 440, 200)
 
 
-t+=1
+if (!lost && !won) t+=1
 requestAnimationFrame(loop)
 }
