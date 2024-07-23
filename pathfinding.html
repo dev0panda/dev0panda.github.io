@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <canvas id="grid_canvas"></canvas>
+        <button onclick = "runAlgorithm()">run algorithm</button>
+    </body>
+    <script>
+
+canvas = document.getElementById("grid_canvas")
+canvas.width = 1000
+canvas.height = 700
+ctx = canvas.getContext("2d")
+
+size = [60, 40]
+squaresize = 15
+animationBatchSize = 30
+ms = 20
+
+
+class Node {
+    constructor(x, y, data) {
+        this.x=x
+        this.y=y
+        this.data = data
+        this.connections = []
+    }
+}
+//connections should be assigned before numbers, because then numbers can easily be looked up by connections
+//maybe use same process as done to determine a cell's
+
+//does what is described in above comments; creates a copy of the original grid but with nodes
+function createGridWithNodes(grid) {
+    let nodeGrid = []
+    for (i in grid) {
+        ng = []
+        for (j in grid[i]) {
+            if (grid[i][j]==1) {
+                ng.push(new Node(i, j, undefined))
+            } else {
+                ng.push(undefined)
+            }
+        }
+        nodeGrid.push(ng)
+    }
+
+    return nodeGrid
+}
+
+//assigns the proper connections to the nodes and returns the new grid
+function createConnectionsFromGrid(gridWithNodes) {
+    connectedGrid = gridWithNodes
+    for (let i = 0; i<connectedGrid.length; i++) {
+        for (let j=0; j<connectedGrid[i].length; j++) {
+            if (connectedGrid[i][j]!=undefined) {
+
+                if (i>0) {
+                    if (connectedGrid[i-1][j]!=undefined) {connectedGrid[i][j].connections.push(connectedGrid[i-1][j])}
+                }
+                if (j>0) {
+                    if (connectedGrid[i][j-1]!=undefined) {connectedGrid[i][j].connections.push(connectedGrid[i][j-1])}
+                }
+                if (i<connectedGrid.length-1) {
+                    if (connectedGrid[i+1][j]!=undefined) {connectedGrid[i][j].connections.push(connectedGrid[i+1][j])}
+                }
+                if (j<connectedGrid[i].length-1) {
+                    if (connectedGrid[i][j+1]!=undefined) {connectedGrid[i][j].connections.push(connectedGrid[i][j+1])}
+                }
+
+
+            }
+        }
+    }
+
+    return connectedGrid
+} 
+
+//takes the grid of nodes and turns them into a list
+function gridOfNodesToList(grid) {
+    let nodeList = []
+    for (let i = 0; i<grid.length; i++) {
+        for (let j=0; j<grid[i].length; j++) {
+            if (grid[i][j]!=undefined) {
+                a = grid[i][j]
+                a.data = nodeList.length
+                nodeList.push(a)
+            }
+        }
+    } 
+    return nodeList
+}
+
+//creates a map of connections from the node list
+function createMapFromNodeList(nodeList) {
+    let nodeMapList = []
+    let indexList = []
+    for (let i = 0; i<nodeList.length; i++) {
+        indexList = [i, []]
+        for (let j=0; j<nodeList[i].connections.length; j++) {
+            indexList[1].push(nodeList[i].connections[j].data)
+        }
+        nodeMapList.push(indexList)
+    }
+    return new Map(nodeMapList)
+}
+
+
+
+
+
+//console.log(nodeList)
+
+//console.log(connectionsMap)
+
+//I think I can make A* work now
+
+//but actually, I'll just start with dijkstra's
+
+//needs to be modified to have an efficient priority queue
+
+class Qelement {
+    constructor(value, priority) {
+        this.value=value
+        this.priority=priority
+    }
+}
+function getTopPriorityValue(prioQueue) {
+    let minPriority = Infinity 
+    let v = undefined
+    for (let i = 0; i<prioQueue.length; i++) {
+        if (prioQueue[i].priority<minPriority) {
+            v = prioQueue[i].value
+            minPriority = prioQueue[i].priority
+        }   
+    }
+    return v
+}
+
+function removeFromPriorityQueue(prioQueue, element) {
+    for (let i = 0; i<prioQueue.length; i++) {
+        if (prioQueue[i].value==element) {
+            prioQueue = prioQueue.splice(i, 1)
+            break;
+        }
+    }
+}
+
+
+const getDist = a => 1;
+const distance = (a, b) => Math.sqrt(Math.pow(a.x-b.x, 2)+Math.pow(a.y-b.y,2))
+
+//animated version
+function A_star(start, end, nodeList, nodeMap) {
+    runAlgorithmAllowed=false
+    let openSet = [new Qelement(start, distance(nodeList[start], nodeList[end]))]; //should be a priority queue
+    let c = [];
+    let l = [];
+    let h = [];
+    for (let i=0; i<nodeList.length; i++) {
+        c.push([i, undefined]);
+        l.push([i, Infinity]);
+        h.push([i, Infinity])
+    };
+    let cameFrom = new Map(c);
+    cameFrom.set(start, -1); //start node has no cameFrom node
+    let pathLength = new Map(l); //default value of Infinity
+    pathLength.set(start, 0)
+    let heuristicLength = new Map(h);
+    heuristicLength.set(start, distance(nodeList[start], nodeList[end]))
+
+    let chosenNode;
+    let heuristic;
+    let neighbor;
+    let a = window.setInterval(function () {
+        if (nodeMap.get(end).length==0 || nodeMap.get(start).length==0) {
+            clearInterval(a)
+            runAlgorithmAllowed=true
+        }
+        for (let n = 0; n<animationBatchSize; n++) {
+        drawNode(nodeList[start].x, nodeList[start].y, "#FFF")
+        drawNode(nodeList[end].x, nodeList[end].y, "#0F0")
+        for (let i = 0; i<openSet.length ;i++) {
+            drawNode(nodeList[openSet[i].value].x, nodeList[openSet[i].value].y, "#FDA")
+        }
+        if (openSet.length>0) {
+        chosenNode = getTopPriorityValue(openSet);
+        if (chosenNode==end) {
+    let path = []
+    let cNode = end
+    if (cameFrom.get(cNode)!=-1 && cameFrom.get(cNode)!=undefined) {
+    while (cameFrom.get(cNode)!=-1) {
+        path.unshift(cNode)
+        cNode = cameFrom.get(cNode)
+        if (nodeList[cNode]!=undefined) {drawNode(nodeList[cNode].x, nodeList[cNode].y, "#28F")} else {break;}
+    }
+    }
+    clearInterval(a)   
+    runAlgorithmAllowed=true
+    return path
+
+        }
+        
+        removeFromPriorityQueue(openSet, chosenNode);
+        
+            for (let i = 0; i<nodeMap.get(chosenNode).length; i++) {
+                neighbor = nodeMap.get(chosenNode)[i]
+                drawNode(nodeList[neighbor].x, nodeList[neighbor].y, "#FCC")
+                heuristic = pathLength.get(chosenNode)+distance(nodeList[chosenNode], nodeList[neighbor])
+                if (heuristic<pathLength.get(neighbor)) {
+                    cameFrom.set(neighbor, chosenNode)
+                    pathLength.set(neighbor, heuristic)
+                    heuristicLength.set(neighbor, heuristic+distance(nodeList[neighbor], nodeList[end]))
+
+                    if (openSet.indexOf(neighbor)==-1) openSet.push(new Qelement(neighbor, heuristicLength.get(neighbor)))
+                }
+            };
+    } else {clearInterval(a); runAlgorithmAllowed=true}};
+    }, ms)
+};
+
+function naiveSearch(start, end, nodeList, nodeMap) { //aka floodfill
+    openSet = [start]
+    let c = []
+    for (let i=0; i<nodeList.length; i++) {
+        c.push([i, undefined]);
+    };
+    let cameFrom = new Map(c);
+    cameFrom.set(start, -1); //start node has no cameFrom node
+
+    while (cameFrom.get(end)==undefined && openSet.length>0) {
+        newOpenSet = []
+        for (let i = 0; i<openSet.length; i++) {
+            drawNode(nodeList[openSet[i]].x, nodeList[openSet[i]].y)
+            c = nodeMap.get(openSet[i])
+            for (let j = 0; j<c.length; j++) { 
+
+                //console.log(c[j]+ "cameFrom: " + cameFrom.get(c[j]))
+                if (cameFrom.get(c[j])==undefined) {
+                    cameFrom.set(c[j],openSet[i])
+                    newOpenSet.push(c[j])
+                } 
+            }
+        }
+        openSet = newOpenSet
+    }
+
+    //return reconstructed path
+    let path = []
+    let cNode = end
+    if (cameFrom.get(cNode)!=-1) {
+    while (cameFrom.get(cNode)!=-1) {
+        path.unshift(cNode)
+        cNode = cameFrom.get(cNode)
+        if (nodeList[cNode]!=undefined) {drawNode(nodeList[cNode].x, nodeList[cNode].y, "#00F")} else {break;}
+    }
+    }
+    //path.unshift(start)
+    drawNode(nodeList[start].x, nodeList[start].y, "#FF0")
+    drawNode(nodeList[end].x, nodeList[end].y, "#0F0")
+    return path
+}
+function animatedNaiveSearch(start, end, nodeList, nodeMap) {
+    openSet = [start]
+    let c = []
+    for (let i=0; i<nodeList.length; i++) {
+        c.push([i, undefined]);
+    };
+    let cameFrom = new Map(c);
+    cameFrom.set(start, -1); //start node has no cameFrom node
+    runAlgorithmAllowed=false
+    let a = window.setInterval( function () {
+    if (cameFrom.get(end)==undefined && openSet.length>0) {
+        newOpenSet = []
+        for (let i = 0; i<openSet.length; i++) {
+            drawNode(nodeList[openSet[i]].x, nodeList[openSet[i]].y)
+            
+            c = nodeMap.get(openSet[i])
+            for (let j = 0; j<c.length; j++) { 
+
+                //console.log(c[j]+ "cameFrom: " + cameFrom.get(c[j]))
+                if (cameFrom.get(c[j])==undefined) {
+                    cameFrom.set(c[j],openSet[i])
+                    newOpenSet.push(c[j])
+                } 
+            }
+        }
+        openSet = newOpenSet
+        drawNode(nodeList[start].x, nodeList[start].y, "#FF0")
+    drawNode(nodeList[end].x, nodeList[end].y, "#0F0")
+
+    } else {
+        runAlgorithmAllowed = true
+        clearInterval(a)
+        //return reconstructed path
+        let path = []
+    let cNode = end
+    if (cameFrom.get(cNode)!=-1) {
+    while (cameFrom.get(cNode)!=-1) {
+        path.unshift(cNode)
+        cNode = cameFrom.get(cNode)
+        drawNode(nodeList[cNode].x, nodeList[cNode].y, "#00F")
+    }
+    //path.unshift(start)
+    }
+    drawNode(nodeList[start].x, nodeList[start].y, "#FF0")
+    drawNode(nodeList[end].x, nodeList[end].y, "#0F0")
+    return path
+    }
+    }, 20)
+
+    
+
+}
+
+
+
+function drawNode(x, y, color="#F00") {
+    ctx.fillStyle= color
+    ctx.fillRect(x*squaresize, y*squaresize, squaresize, squaresize)
+}
+
+function drawGrid() {
+    for (let i=0; i<grid.length; i++) {
+        for (let j = 0; j<grid[i].length; j++) {
+            ctx.fillStyle = "#000"
+            drawsize = squaresize
+            if (grid[i][j]==1) {
+                ctx.fillStyle = "#CCC" 
+                drawsize = squaresize
+            }
+            ctx.fillRect(i*squaresize, j*squaresize, drawsize, drawsize)
+        }
+    }
+}
+
+let grid = []
+function resetGrid() {
+    grid = []
+for (let i=0; i<size[0]; i++) {
+    g = []
+    for (let j=0; j<size[1]; j++) {
+        g.push(Math.floor(Math.random()+0.75))
+    }
+    grid.push(g)
+}
+}
+let runAlgorithmAllowed = true
+resetGrid()
+let nodeGrid = createGridWithNodes(grid)
+nodeGrid = createConnectionsFromGrid(nodeGrid)
+let nodeList = gridOfNodesToList(nodeGrid)
+let connectionsMap = createMapFromNodeList(nodeList)
+
+drawGrid()
+A_star(0, nodeList.length-1, nodeList, connectionsMap)
+
+
+document.onmousedown = function (e) {
+    if (runAlgorithmAllowed && e.pageX<canvas.width && e.pageY<canvas.height) {
+        if (e.button==2) {
+        drawGrid()
+        end = getNodeIndex(Math.floor((e.pageX-5)/squaresize), Math.floor((e.pageY-5)/squaresize))
+        //animatedNaiveSearch(s, end, nodeList, connectionsMap)
+        A_star(s, end, nodeList, connectionsMap)
+        }
+        if (e.button==0) {
+            drawGrid()
+        s = getNodeIndex(Math.floor((e.pageX-5)/squaresize), Math.floor((e.pageY-5)/squaresize))
+        //animatedNaiveSearch(s, end, nodeList, connectionsMap)
+        A_star(s, end, nodeList, connectionsMap)
+        }
+    }
+}
+
+function getNodeIndex(x, y) {
+    for (let i = 0; i<nodeList.length; i++) {
+        if (nodeList[i].x==x && nodeList[i].y==y) return i
+    }
+    return 0
+}
+
+window.oncontextmenu = function () {return false;}
+let s = 0
+let end = 1
+function runAlgorithm() {
+if (runAlgorithmAllowed) {
+
+resetGrid()
+nodeGrid = createGridWithNodes(grid)
+nodeGrid = createConnectionsFromGrid(nodeGrid)
+nodeList = gridOfNodesToList(nodeGrid)
+connectionsMap = createMapFromNodeList(nodeList)
+
+drawGrid()
+s = Math.floor(Math.random()*nodeList.length)
+end = Math.floor(Math.random()*nodeList.length)
+//console.log(end)
+//console.log(s)
+//animatedNaiveSearch(s, end, nodeList, connectionsMap)
+//drawGrid()
+A_star(s, end, nodeList, connectionsMap)
+}
+}
+//console.log(grid)
+
+    </script>
+</html>
