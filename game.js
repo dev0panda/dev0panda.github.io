@@ -74,13 +74,17 @@ function displayscreen(update) {
             if (tiles.includes(pos)) {
                 //this is a cool ruleset:          
 					//if (nearby < 2 || nearby > 3 && nearby<7) 
-					if (nearby < 2 || nearby > 3) {
+		    //normal:
+					//if (nearby < 2 || nearby > 3) {
+		    			if (nearby == 3 || nearby == 4 || nearby == 6 || nearby == 7 || nearby == 8) {
                     remove.push(pos)
                 }
             } else {
 					//this is a cool ruleset:
                 //if (nearby == 3 || nearby>=7)
-					 if (nearby == 3) {
+		    //normal:
+					 //if (nearby == 3) {
+		    			if (nearby == 3 || nearby == 6 || nearby == 7 || nearby == 8) {
                     add.push(pos)
                 }
             }
